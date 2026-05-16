@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const crypto = require('crypto');
 const { Octokit } = require('@octokit/rest');
-const { analyzeDiffWithLLM } = require('./llm');   // We'll create this next
+const { analyzePullRequest } = require('./github');
 
 const app = express();
 const octokit = new Octokit({ auth: process.env.GITHUB_ACCESS_TOKEN });
@@ -14,8 +14,12 @@ app.use(express.json({
 }));
 
 app.post('/webhook', async (req, res) => {
-  const signature = req.headers['x-hub-signature-256'];
   const event = req.headers['x-github-event'];
+  const signature = req.headers['x-hub-signature-256'];
+
+  if (!event) {
+    return res.status(400).send('Missing X-GitHub-Event header');
+  }
 
   console.log('📨 Webhook received:', { event, signature: signature ? 'present' : 'missing' });
 
@@ -28,8 +32,17 @@ app.post('/webhook', async (req, res) => {
   console.log('✅ Signature valid. Action:', payload.action);
 
   if (event === 'pull_request' && (payload.action === 'opened' || payload.action === 'synchronize')) {
-    console.log(`🔍 Processing PR #${payload.pull_request.number}`);
-    processPR(payload).catch(err => console.error('PR processing error:', err));
+    const owner = payload.repository?.owner?.login;
+    const repo = payload.repository?.name;
+    const pull_number = payload.pull_request?.number;
+
+    if (!owner || !repo || !pull_number) {
+      console.error('❌ Missing owner, repo, or pull_request.number in webhook payload');
+      return res.status(400).send('Invalid pull request payload');
+    }
+
+    console.log(`🔍 Processing PR #${pull_number}`);
+    analyzePullRequest(octokit, owner, repo, pull_number).catch(err => console.error('PR processing error:', err));
   } else {
     console.log('⏭️ Ignoring event:', event, payload.action);
   }
@@ -46,54 +59,14 @@ function verifySignature(rawBody, signature) {
   }
   const hmac = crypto.createHmac('sha256', secret);
   const digest = 'sha256=' + hmac.update(rawBody).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature));
-}
+  const expectedBuffer = Buffer.from(digest);
+  const receivedBuffer = Buffer.from(signature);
 
-// ========== FULL PR PROCESSING ==========
-async function processPR(payload) {
-  const owner = payload.repository.owner.login;
-  const repo = payload.repository.name;
-  const prNumber = payload.pull_request.number;
+  if (expectedBuffer.length !== receivedBuffer.length) {
+    return false;
+  }
 
-  console.log(`📥 Fetching diff for ${owner}/${repo}#${prNumber}`);
-
-  // 1. Get PR diff
-  const { data: diff } = await octokit.pulls.get({
-    owner,
-    repo,
-    pull_number: prNumber,
-    mediaType: { format: 'diff' }
-  });
-
-  // 2. Clean diff (reduce token usage)
-  const cleanedDiff = diff.split('\n')
-    .filter(line => 
-      line.startsWith('diff --git') ||
-      line.startsWith('---') ||
-      line.startsWith('+++') ||
-      line.startsWith('+') ||
-      line.startsWith('-')
-    )
-    .join('\n');
-
-  console.log(`📄 Diff size: ${cleanedDiff.length} chars`);
-
-  // 3. Call Groq (via llm.js)
-  const llmResponse = await analyzeDiffWithLLM(cleanedDiff, { strict_mode: false });
-
-  console.log(`🤖 LLM response length: ${llmResponse.length} chars`);
-
-  // 4. Post comment to PR
-  const commentBody = `## 🤖 GitGuard AI (Groq)\n\n${llmResponse}\n\n---\n*Automated review by GitGuard AI*`;
-
-  await octokit.issues.createComment({
-    owner,
-    repo,
-    issue_number: prNumber,
-    body: commentBody
-  });
-
-  console.log(`✅ Comment posted on PR #${prNumber}`);
+  return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
 }
 
 const PORT = process.env.PORT || 3000;
