@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitGuard AI - Review History</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f6f8fa; }
+        h1 { color: #24292f; }
+        table { border-collapse: collapse; width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid #e1e4e8; }
+        th { background-color: #f6f8fa; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 15px; text-decoration: none; color: #0969da; }
+        pre { background: #f6f8fa; padding: 8px; border-radius: 6px; white-space: pre-wrap; font-size: 12px; max-height: 150px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/dashboard">🏠 Dashboard</a>
+        <a href="/history">📜 History</a>
+    </div>
+    <h1>📋 AI Review History</h1>
+    <table>
+        <thead>
+            <tr><th>Repo</th><th>PR #</th><th>Title</th><th>Reviewer</th><th>Timestamp</th><th>AI Response (truncated)</th></tr>
+        </thead>
+        <tbody>
+            <% reviews.forEach(review => { %>
+                <tr>
+                    <td><%= review.repo_full_name %></td>
+                    <td><%= review.pr_number %></td>
+                    <td><%= review.pr_title ? review.pr_title.substring(0, 50) : '-' %></td>
+                    <td><%= review.reviewer %></td>
+                    <td><%= new Date(review.timestamp).toLocaleString() %></td>
+                    <td><pre><%= (review.llm_response || '').substring(0, 200) %>...</pre></td>
+                </tr>
+            <% }); %>
+            <% if (reviews.length === 0) { %>
+                <tr><td colspan="6" style="text-align:center;">No reviews yet. Open a PR to see history.</td></tr>
+            <% } %>
+        </tbody>
+    </table>
+</body>
+</html>
