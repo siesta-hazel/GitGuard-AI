@@ -3,13 +3,24 @@ const { analyzeDiffWithLLM } = require('./llm');
 function cleanRawDiff(rawDiff) {
   return rawDiff
     .split('\n')
-    .filter(line => 
+    .filter(line =>
       line.startsWith('diff --git') ||
       line.startsWith('index ') ||
+      line.startsWith('new file mode ') ||
+      line.startsWith('deleted file mode ') ||
+      line.startsWith('old mode ') ||
+      line.startsWith('new mode ') ||
+      line.startsWith('similarity index ') ||
+      line.startsWith('dissimilarity index ') ||
+      line.startsWith('rename from ') ||
+      line.startsWith('rename to ') ||
+      line.startsWith('copy from ') ||
+      line.startsWith('copy to ') ||
       line.startsWith('---') ||
       line.startsWith('+++') ||
       line.startsWith('@@') ||
-      line.startsWith('+')
+      line.startsWith('+') ||
+      line.startsWith('-')
     )
     .join('\n');
 }
