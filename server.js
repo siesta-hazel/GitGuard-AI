@@ -1,11 +1,18 @@
+const db = require('./db');
+const path = require('path');
+
 require('dotenv').config();
 const express = require('express');
 const crypto = require('crypto');
 const { Octokit } = require('@octokit/rest');
 const { analyzePullRequest } = require('./github');
 
+
 const app = express();
 const octokit = new Octokit({ auth: process.env.GITHUB_ACCESS_TOKEN });
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
@@ -35,6 +42,7 @@ app.post('/webhook', async (req, res) => {
     const owner = payload.repository?.owner?.login;
     const repo = payload.repository?.name;
     const pull_number = payload.pull_request?.number;
+    const pr_title = payload.pull_request?.title || 'Untitled PR';
 
     if (!owner || !repo || !pull_number) {
       console.error('❌ Missing owner, repo, or pull_request.number in webhook payload');
@@ -42,7 +50,7 @@ app.post('/webhook', async (req, res) => {
     }
 
     console.log(`🔍 Processing PR #${pull_number}`);
-    analyzePullRequest(octokit, owner, repo, pull_number).catch(err => console.error('PR processing error:', err));
+    analyzePullRequest(octokit, owner, repo, pull_number, pr_title).catch(err => console.error('PR processing error:', err));
   } else {
     console.log('⏭️ Ignoring event:', event, payload.action);
   }
@@ -73,4 +81,34 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 GitGuard AI running on port ${PORT}`);
   console.log(`📋 Webhook secret loaded: ${process.env.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
+});
+
+// Dashboard home – list all repos with settings
+app.get('/dashboard', (req, res) => {
+  db.all('SELECT * FROM repo_settings ORDER BY repo_full_name', (err, repos) => {
+    if (err) return res.status(500).send('Database error');
+    res.render('dashboard', { repos });
+  });
+});
+
+// Update settings for a repository
+app.post('/dashboard/settings', express.urlencoded({ extended: true }), (req, res) => {
+  const { repo_full_name, strict_mode, ignore_linter, active } = req.body;
+  db.run(
+    `INSERT OR REPLACE INTO repo_settings (repo_full_name, strict_mode, ignore_linter, active)
+     VALUES (?, ?, ?, ?)`,
+    [repo_full_name, strict_mode === 'on' ? 1 : 0, ignore_linter === 'on' ? 1 : 0, active === 'on' ? 1 : 0],
+    (err) => {
+      if (err) return res.status(500).send('Failed to update');
+      res.redirect('/dashboard');
+    }
+  );
+});
+
+// History log – show all past reviews
+app.get('/history', (req, res) => {
+  db.all('SELECT * FROM review_history ORDER BY timestamp DESC LIMIT 100', (err, reviews) => {
+    if (err) return res.status(500).send('Database error');
+    res.render('history', { reviews });
+  });
 });

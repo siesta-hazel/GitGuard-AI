@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitGuard AI Dashboard</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f6f8fa; }
+        h1 { color: #24292f; }
+        table { border-collapse: collapse; width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid #e1e4e8; }
+        th { background-color: #f6f8fa; }
+        form { margin: 0; }
+        button { background: #2da44e; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #2c974b; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 15px; text-decoration: none; color: #0969da; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/dashboard">🏠 Dashboard</a>
+        <a href="/history">📜 History</a>
+    </div>
+    <h1>🔧 Repository Settings</h1>
+    <table>
+        <thead>
+            <tr><th>Repository</th><th>Strict Mode</th><th>Ignore Linter</th><th>Active</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            <% repos.forEach(repo => { %>
+                <tr>
+                    <td><strong><%= repo.repo_full_name %></strong></td>
+                    <form method="POST" action="/dashboard/settings">
+                        <input type="hidden" name="repo_full_name" value="<%= repo.repo_full_name %>">
+                        <td><input type="checkbox" name="strict_mode" <%= repo.strict_mode ? 'checked' : '' %>></td>
+                        <td><input type="checkbox" name="ignore_linter" <%= repo.ignore_linter ? 'checked' : '' %>></td>
+                        <td><input type="checkbox" name="active" <%= repo.active ? 'checked' : '' %>></td>
+                        <td><button type="submit">Save</button></td>
+                    </form>
+                </tr>
+            <% }); %>
+            <% if (repos.length === 0) { %>
+                <tr><td colspan="5" style="text-align:center;">No repositories configured yet. After a PR is reviewed, it will appear here.</td></tr>
+            <% } %>
+        </tbody>
+    </table>
+</body>
+</html>
