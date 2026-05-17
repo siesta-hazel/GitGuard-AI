@@ -49,6 +49,13 @@ async function analyzePullRequest(octokit, owner, repo, pull_number) {
     const llmResponse = await analyzeDiffWithLLM(cleanedDiff);
     console.log('🤖 LLM response:\n', llmResponse);
 
+    await octokit.issues.createComment({
+      owner,
+      repo,
+      issue_number: pull_number,
+      body: llmResponse
+    });
+
     return { rawDiff, cleanedDiff, llmResponse };
   } catch (error) {
     console.error(`❌ Failed to analyze PR ${owner}/${repo}#${pull_number}:`, error);
