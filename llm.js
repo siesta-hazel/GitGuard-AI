@@ -1,5 +1,7 @@
 const Groq = require('groq-sdk');
 
+let groqClient;
+
 function buildDiffReviewMessages(diff) {
   return [
     {
@@ -27,7 +29,7 @@ async function analyzeDiffWithLLM(diff) {
     throw new Error('Missing GROQ_API_KEY in environment variables');
   }
 
-  const groq = new Groq({ apiKey });
+  const groq = getGroqClient(apiKey);
 
   try {
     const completion = await groq.chat.completions.create({
@@ -43,4 +45,12 @@ async function analyzeDiffWithLLM(diff) {
   }
 }
 
-module.exports = { analyzeDiffWithLLM, buildDiffReviewMessages };
+function getGroqClient(apiKey) {
+  if (!groqClient) {
+    groqClient = new Groq({ apiKey });
+  }
+
+  return groqClient;
+}
+
+module.exports = { analyzeDiffWithLLM, buildDiffReviewMessages, getGroqClient };
