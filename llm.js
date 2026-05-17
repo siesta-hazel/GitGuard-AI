@@ -1,8 +1,8 @@
 const Groq = require('groq-sdk');
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+let groqClient;
 
-async function analyzeDiffWithLLM(diff, settings = {}) {
+function buildDiffReviewMessages(diff, settings = {}) {
   const strictMode = settings.strict_mode || false;
   const ignoreLinter = settings.ignore_linter || false;
 
@@ -19,14 +19,30 @@ For each issue: quote the problematic lines, explain why it's wrong, and provide
 
 Output in GitHub Markdown. If no issues, say "No critical issues found."${extra}`;
 
-  const userPrompt = `Analyze this diff:\n\`\`\`diff\n${diff}\n\`\`\``;
+  return [
+    {
+      role: 'system',
+      content: systemPrompt
+    },
+    {
+      role: 'user',
+      content: `Analyze this diff:\n\`\`\`diff\n${diff}\n\`\`\``
+    }
+  ];
+}
+
+async function analyzeDiffWithLLM(diff, settings = {}) {
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('Missing GROQ_API_KEY in environment variables');
+  }
+
+  const groq = getGroqClient(apiKey);
 
   try {
     const completion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+      messages: buildDiffReviewMessages(diff, settings),
       model: 'llama-3.3-70b-versatile',
       temperature: 0.3,
       max_tokens: 1500,
@@ -34,8 +50,16 @@ Output in GitHub Markdown. If no issues, say "No critical issues found."${extra}
     return completion.choices[0]?.message?.content || '❌ No response from Groq.';
   } catch (error) {
     console.error('Groq error:', error);
-    return `❌ AI analysis failed: ${error.message}`;
+    throw new Error(`AI analysis failed: ${error.message}`);
   }
 }
 
-module.exports = { analyzeDiffWithLLM };
+function getGroqClient(apiKey) {
+  if (!groqClient) {
+    groqClient = new Groq({ apiKey });
+  }
+
+  return groqClient;
+}
+
+module.exports = { analyzeDiffWithLLM, buildDiffReviewMessages, getGroqClient };

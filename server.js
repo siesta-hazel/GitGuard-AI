@@ -5,7 +5,7 @@ require('dotenv').config();
 const express = require('express');
 const crypto = require('crypto');
 const { Octokit } = require('@octokit/rest');
-const { analyzeDiffWithLLM } = require('./llm');   // We'll create this next
+const { analyzePullRequest } = require('./github');
 
 
 const app = express();
@@ -21,8 +21,12 @@ app.use(express.json({
 }));
 
 app.post('/webhook', async (req, res) => {
-  const signature = req.headers['x-hub-signature-256'];
   const event = req.headers['x-github-event'];
+  const signature = req.headers['x-hub-signature-256'];
+
+  if (!event) {
+    return res.status(400).send('Missing X-GitHub-Event header');
+  }
 
   console.log('📨 Webhook received:', { event, signature: signature ? 'present' : 'missing' });
 
@@ -35,8 +39,18 @@ app.post('/webhook', async (req, res) => {
   console.log('✅ Signature valid. Action:', payload.action);
 
   if (event === 'pull_request' && (payload.action === 'opened' || payload.action === 'synchronize')) {
-    console.log(`🔍 Processing PR #${payload.pull_request.number}`);
-    processPR(payload).catch(err => console.error('PR processing error:', err));
+    const owner = payload.repository?.owner?.login;
+    const repo = payload.repository?.name;
+    const pull_number = payload.pull_request?.number;
+    const pr_title = payload.pull_request?.title || 'Untitled PR';
+
+    if (!owner || !repo || !pull_number) {
+      console.error('❌ Missing owner, repo, or pull_request.number in webhook payload');
+      return res.status(400).send('Invalid pull request payload');
+    }
+
+    console.log(`🔍 Processing PR #${pull_number}`);
+    analyzePullRequest(octokit, owner, repo, pull_number, pr_title).catch(err => console.error('PR processing error:', err));
   } else {
     console.log('⏭️ Ignoring event:', event, payload.action);
   }
@@ -53,84 +67,16 @@ function verifySignature(rawBody, signature) {
   }
   const hmac = crypto.createHmac('sha256', secret);
   const digest = 'sha256=' + hmac.update(rawBody).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature));
-}
+  const expectedBuffer = Buffer.from(digest);
+  const receivedBuffer = Buffer.from(signature);
 
-// ========== FULL PR PROCESSING ==========
-async function processPR(payload) {
-  const owner = payload.repository.owner.login;
-  const repo = payload.repository.name;
-  const prNumber = payload.pull_request.number;
-  const repoName = `${owner}/${repo}`;
-
-  console.log(`📥 Fetching diff for ${repoName}#${prNumber}`);
-
-  // 1. Get PR diff
-  const { data: diff } = await octokit.pulls.get({
-    owner,
-    repo,
-    pull_number: prNumber,
-    mediaType: { format: 'diff' }
-  });
-
-  // 2. Clean diff
-  const cleanedDiff = diff.split('\n')
-    .filter(line => 
-      line.startsWith('diff --git') ||
-      line.startsWith('---') ||
-      line.startsWith('+++') ||
-      line.startsWith('+') ||
-      line.startsWith('-')
-    )
-    .join('\n');
-
-  // 3. Get repo settings from DB
-  const settings = await new Promise((resolve) => {
-  db.get('SELECT strict_mode, ignore_linter, active FROM repo_settings WHERE repo_full_name = ?', [repoName], (err, row) => {
-    if (err || !row) {
-      // No settings yet – insert a default row
-      db.run(
-        `INSERT INTO repo_settings (repo_full_name, strict_mode, ignore_linter, active)
-         VALUES (?, 0, 0, 1)`,
-        [repoName],
-        (insertErr) => {
-          if (insertErr) console.error('Failed to insert repo settings:', insertErr);
-          resolve({ strict_mode: false, ignore_linter: false, active: true });
-        }
-      );
-    } else {
-      resolve(row);
-    }
-  });
-});
-
-  if (!settings.active) {
-    console.log(`⏸️ GitGuard is inactive for ${repoName}`);
-    return;
+  if (expectedBuffer.length !== receivedBuffer.length) {
+    return false;
   }
 
-  // 4. Call LLM with settings (ONLY ONE DECLARATION)
-  const llmResponse = await analyzeDiffWithLLM(cleanedDiff, settings);
-
-  // 5. Post comment
-  const commentBody = `## 🤖 GitGuard AI (Groq)\n\n${llmResponse}\n\n---\n*Automated review by GitGuard AI*`;
-  await octokit.issues.createComment({
-    owner,
-    repo,
-    issue_number: prNumber,
-    body: commentBody
-  });
-
-  // 6. Save to history
-  db.run(
-    `INSERT INTO review_history (repo_full_name, pr_number, pr_title, reviewer, llm_response)
-     VALUES (?, ?, ?, ?, ?)`,
-    [repoName, prNumber, payload.pull_request.title, 'GitGuard AI', llmResponse],
-    (err) => { if (err) console.error('Failed to save history:', err); }
-  );
-
-  console.log(`✅ Comment posted on PR #${prNumber}`);
+  return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
 }
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 GitGuard AI running on port ${PORT}`);
