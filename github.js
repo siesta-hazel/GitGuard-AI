@@ -40,13 +40,16 @@ async function analyzePullRequest(octokit, owner, repo, pull_number) {
     const llmResponse = await analyzeDiffWithLLM(cleanedDiff);
     console.log('🤖 LLM response:\n', llmResponse);
 
-    const commentBody = `## 🤖 GitGuard AI (Groq)\n\n${llmResponse}\n\n---\n*Automated review by GitGuard AI*`;
-    await octokit.issues.createComment({
-      owner,
-      repo,
-      issue_number: pull_number,
-      body: commentBody
-    });
+    try {
+      await octokit.issues.createComment({
+        owner,
+        repo,
+        issue_number: pull_number,
+        body: llmResponse
+      });
+    } catch (commentError) {
+      console.error('❌ Failed to post review comment to GitHub PR', commentError);
+    }
 
     db.run(
       `INSERT INTO review_history (repo_full_name, pr_number, pr_title, reviewer, llm_response)
