@@ -42,7 +42,6 @@ app.post('/webhook', async (req, res) => {
     const owner = payload.repository?.owner?.login;
     const repo = payload.repository?.name;
     const pull_number = payload.pull_request?.number;
-    const pr_title = payload.pull_request?.title || 'Untitled PR';
 
     if (!owner || !repo || !pull_number) {
       console.error('❌ Missing owner, repo, or pull_request.number in webhook payload');
@@ -50,7 +49,7 @@ app.post('/webhook', async (req, res) => {
     }
 
     console.log(`🔍 Processing PR #${pull_number}`);
-    analyzePullRequest(octokit, owner, repo, pull_number, pr_title).catch(err => console.error('PR processing error:', err));
+    analyzePullRequest(octokit, owner, repo, pull_number).catch(err => console.error('PR processing error:', err));
   } else {
     console.log('⏭️ Ignoring event:', event, payload.action);
   }
@@ -59,22 +58,30 @@ app.post('/webhook', async (req, res) => {
 });
 
 function verifySignature(rawBody, signature) {
-  if (!signature || !rawBody) return false;
+  if (!rawBody || typeof signature !== 'string' || signature.length === 0) return false;
+
   const secret = process.env.GITHUB_WEBHOOK_SECRET;
   if (!secret) {
     console.error('⚠️ GITHUB_WEBHOOK_SECRET is not set in .env');
     return false;
   }
+
   const hmac = crypto.createHmac('sha256', secret);
   const digest = 'sha256=' + hmac.update(rawBody).digest('hex');
-  const expectedBuffer = Buffer.from(digest);
-  const receivedBuffer = Buffer.from(signature);
 
-  if (expectedBuffer.length !== receivedBuffer.length) {
+  try {
+    const expectedBuffer = Buffer.from(digest, 'utf8');
+    const receivedBuffer = Buffer.from(signature, 'utf8');
+
+    if (expectedBuffer.length !== receivedBuffer.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+  } catch (error) {
+    console.error('❌ Signature verification error:', error);
     return false;
   }
-
-  return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
 }
 
 const PORT = process.env.PORT || 3000;
