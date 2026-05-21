@@ -85,11 +85,27 @@ function verifySignature(rawBody, signature) {
   }
 }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 GitGuard AI running on port ${PORT}`);
-  console.log(`📋 Webhook secret loaded: ${process.env.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
-});
+const PORT = Number(process.env.PORT || 3000);
+
+function startServer(port) {
+  const server = app.listen(port, () => {
+    console.log(`🚀 GitGuard AI running on port ${port}`);
+    console.log(`📋 Webhook secret loaded: ${process.env.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
+  });
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.warn(`⚠️ Port ${port} is already in use, trying ${port + 1}...`);
+      server.close(() => startServer(port + 1));
+      return;
+    }
+
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  });
+}
+
+startServer(PORT);
 
 // Dashboard home – list all repos with settings
 app.get('/dashboard', (req, res) => {
