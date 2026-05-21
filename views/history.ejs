@@ -14,20 +14,20 @@
 
         <section class="hero-panel glass-panel reveal" style="--delay: 100ms;">
             <div class="hero-grid">
-                <div class="hero-copy">
+                <div class="hero-copy hero-copy--lead">
                     <p class="section-kicker">Archived reviews</p>
-                    <h2 class="hero-title">AI review history, rendered as a premium scrollable record.</h2>
+                    <h2 class="hero-title">Review history with clear hierarchy and generous breathing room.</h2>
                     <p class="hero-description">
-                        This page keeps the same visual language as the dashboard so the review archive feels like part of the same control surface rather than a separate admin table.
+                        The archive preserves the same visual language as the dashboard while separating the hero banner, support copy, and metrics into distinct layers so nothing competes for attention.
                     </p>
                 </div>
 
-                <div class="hero-copy">
-                    <div class="metric-grid">
-                        <%- include('partials/metric-card', { label: 'Stored reviews', value: reviews.length, detail: 'Historical AI responses from pull request analysis.' }) %>
-                        <%- include('partials/metric-card', { label: 'Latest cadence', value: reviews.length ? 'Live' : 'Idle', detail: 'Whether the archive currently has recent entries.' }) %>
-                        <%- include('partials/metric-card', { label: 'Format', value: 'Markdown', detail: 'Technical review output in a monospace surface.' }) %>
-                        <%- include('partials/metric-card', { label: 'Viewport', value: 'Scrollable', detail: 'Optimized for dense review scanning.' }) %>
+                <div class="hero-copy hero-copy--stats">
+                    <div class="metric-grid metric-grid--compact">
+                        <%- include('partials/metric-card', { label: 'Stored reviews', value: reviews.length, detail: 'Historical AI responses from pull request analysis.', compact: true }) %>
+                        <%- include('partials/metric-card', { label: 'Latest cadence', value: reviews.length ? 'Live' : 'Idle', detail: 'Whether the archive currently has recent entries.', compact: true }) %>
+                        <%- include('partials/metric-card', { label: 'Format', value: 'Markdown', detail: 'Technical review output in a monospace surface.', compact: true }) %>
+                        <%- include('partials/metric-card', { label: 'Viewport', value: 'Scrollable', detail: 'Optimized for dense review scanning.', compact: true }) %>
                     </div>
                 </div>
             </div>
@@ -71,6 +71,8 @@
                 <% } %>
             </div>
         </section>
+
+        <%- include('partials/footer') %>
     </main>
 </body>
 </html>

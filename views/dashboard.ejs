@@ -14,20 +14,20 @@
 
         <section class="hero-panel glass-panel reveal" style="--delay: 110ms;">
             <div class="hero-grid">
-                <div class="hero-copy">
-                    <p class="section-kicker">Premium monitoring UI</p>
-                    <h2 class="hero-title">GitGuard AI watches repositories, streams webhook activity, and renders crisp AI review output.</h2>
+                <div class="hero-copy hero-copy--lead">
+                    <p class="section-kicker">Command surface</p>
+                    <h2 class="hero-title">A premium control center for GitHub review intelligence.</h2>
                     <p class="hero-description">
-                        This Week 4 dashboard uses a dark glassmorphism system with green semantic accents, smooth motion, and a technical markdown surface for reviewing incoming GitHub activity.
+                        Track repository policies, stream webhook activity, and inspect AI code review output inside a dark glass interface tuned for high-contrast readability and dense operational work.
                     </p>
-                    <div class="hero-actions">
-                        <span class="pill success">{ Total repos <%= metrics.totalRepos %> }</span>
-                        <span class="pill">{ Active repos <%= metrics.activeRepos %> }</span>
-                        <span class="pill dim">{ Recent reviews <%= metrics.recentReviews %> }</span>
+                    <div class="hero-actions hero-actions--stacked">
+                        <span class="pill success">Total repos <%= metrics.totalRepos %></span>
+                        <span class="pill">Active repos <%= metrics.activeRepos %></span>
+                        <span class="pill dim">Recent reviews <%= metrics.recentReviews %></span>
                     </div>
                 </div>
 
-                <div class="hero-copy">
+                <div class="hero-copy hero-copy--stats">
                     <div class="panel-meta">
                         <span class="panel-kicker">Policy snapshot</span>
                         <span class="info-pill"><%= metrics.strictRepos %> strict policies enabled</span>
@@ -129,6 +129,8 @@
                 <% } %>
             </div>
         </section>
+
+        <%- include('partials/footer') %>
     </main>
 </body>
 </html>
