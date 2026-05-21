@@ -13,6 +13,7 @@ const octokit = new Octokit({ auth: process.env.GITHUB_ACCESS_TOKEN });
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
@@ -94,7 +95,70 @@ app.listen(PORT, () => {
 app.get('/dashboard', (req, res) => {
   db.all('SELECT * FROM repo_settings ORDER BY repo_full_name', (err, repos) => {
     if (err) return res.status(500).send('Database error');
-    res.render('dashboard', { repos });
+
+    db.all('SELECT * FROM review_history ORDER BY timestamp DESC LIMIT 8', (reviewErr, reviews) => {
+      if (reviewErr) return res.status(500).send('Database error');
+
+      const safeRepos = repos || [];
+      const safeReviews = reviews || [];
+      const reviewCounts = safeReviews.reduce((counts, review) => {
+        const repoName = review.repo_full_name || 'Unknown repository';
+        counts[repoName] = (counts[repoName] || 0) + 1;
+        return counts;
+      }, {});
+
+      const metrics = {
+        totalRepos: safeRepos.length,
+        activeRepos: safeRepos.filter(repo => repo.active).length,
+        strictRepos: safeRepos.filter(repo => repo.strict_mode).length,
+        recentReviews: safeReviews.length,
+      };
+
+      const webhookFeed = safeReviews.map((review, index) => {
+        const repoName = review.repo_full_name || 'Unknown repository';
+        const timestamp = review.timestamp ? new Date(review.timestamp) : null;
+        const excerpt = (review.llm_response || '').replace(/\s+/g, ' ').trim();
+
+        return {
+          initials: repoName
+            .split('/')
+            .filter(Boolean)
+            .map(part => part.charAt(0))
+            .join('')
+            .slice(0, 2)
+            .toUpperCase() || 'GH',
+          title: `${repoName} · PR #${review.pr_number || '—'}`,
+          summary: review.pr_title || 'AI review completed for the latest pull request.',
+          detail: index === 0 ? 'Latest webhook captured and queued for analysis.' : 'Previously processed webhook replayed for monitoring.',
+          time: timestamp ? timestamp.toLocaleString() : 'Just now',
+          severity: index === 0 ? 'Live' : 'Archived',
+          excerpt: excerpt ? `${excerpt.slice(0, 150)}${excerpt.length > 150 ? '…' : ''}` : 'No review output stored yet.',
+        };
+      });
+
+      const primaryReview = safeReviews[0]
+        ? {
+            repo_full_name: safeReviews[0].repo_full_name || 'Unknown repository',
+            pr_number: safeReviews[0].pr_number || '—',
+            pr_title: safeReviews[0].pr_title || 'Untitled review',
+            reviewer: safeReviews[0].reviewer || 'GitGuard AI',
+            timestamp: safeReviews[0].timestamp ? new Date(safeReviews[0].timestamp).toLocaleString() : 'Just now',
+            llm_response: safeReviews[0].llm_response || 'No AI markdown was stored for this review yet.',
+          }
+        : null;
+
+      const repoOverview = safeRepos.map(repo => ({
+        ...repo,
+        reviewCount: reviewCounts[repo.repo_full_name] || 0,
+      }));
+
+      res.render('dashboard', {
+        metrics,
+        webhookFeed,
+        primaryReview,
+        repoOverview,
+      });
+    });
   });
 });
 

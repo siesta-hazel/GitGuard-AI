@@ -1,0 +1,13 @@
+<article class="webhook-item">
+  <div class="webhook-avatar"><%= webhook.initials %></div>
+  <div class="webhook-body">
+    <div class="webhook-topline">
+      <span class="webhook-title"><%= webhook.title %></span>
+      <span class="badge <%= webhook.severity === 'Live' ? 'live' : 'archived' %>"><%= webhook.severity %></span>
+    </div>
+    <p class="webhook-summary"><%= webhook.summary %></p>
+    <p class="webhook-detail"><%= webhook.detail %></p>
+    <p class="webhook-excerpt"><%= webhook.excerpt %></p>
+  </div>
+  <div class="webhook-time"><%= webhook.time %></div>
+</article>
