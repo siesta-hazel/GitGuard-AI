@@ -83,7 +83,7 @@ input {
   z-index: 1;
   width: min(1480px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 18px 0 36px;
+  padding: 18px 0 24px;
   flex: 1 0 auto;
 }
 
@@ -204,29 +204,30 @@ input {
 }
 
 .hero-panel {
-  margin-top: 22px;
-  padding: 34px;
+  margin-top: 18px;
+  padding: 36px 34px 30px;
 }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 32px;
+  grid-template-columns: 1fr;
+  gap: 28px;
   align-items: start;
 }
 
 .hero-copy {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .hero-copy--lead {
-  padding-right: 12px;
+  max-width: 74ch;
 }
 
 .hero-title {
-  font-size: clamp(2.7rem, 4.8vw, 4.9rem);
-  max-width: 11ch;
+  font-size: clamp(2.35rem, 4.2vw, 4rem);
+  max-width: 13ch;
+  line-height: 0.98;
 }
 
 .hero-description,
@@ -244,15 +245,15 @@ input {
 }
 
 .hero-description {
-  max-width: 56ch;
-  font-size: 1.02rem;
+  max-width: 62ch;
+  font-size: 0.98rem;
 }
 
 .hero-actions--stacked {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .hero-actions,
@@ -303,30 +304,30 @@ input {
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 22px;
+  gap: 14px;
+  margin-top: 18px;
 }
 
 .metric-grid--compact {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .metric-card {
-  padding: 18px 18px 16px;
-  border-radius: 20px;
+  padding: 16px 16px 14px;
+  border-radius: 18px;
   border: 1px solid var(--line);
   background: var(--panel-soft);
-  min-height: 132px;
+  min-height: 122px;
   display: grid;
   grid-template-rows: auto auto 1fr;
-  gap: 10px;
+  gap: 8px;
   transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .metric-card--compact {
-  min-height: 176px;
-  padding: 18px 18px 18px;
+  min-height: 146px;
+  padding: 14px 14px 12px;
 }
 
 .metric-card:hover {
@@ -345,7 +346,7 @@ input {
 }
 
 .metric-value {
-  font-size: clamp(1.8rem, 3vw, 2.9rem);
+  font-size: clamp(1.55rem, 2.5vw, 2.45rem);
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 0.95;
@@ -353,11 +354,12 @@ input {
 }
 
 .metric-card--compact .metric-value {
-  font-size: clamp(2rem, 3.2vw, 3.2rem);
+  font-size: clamp(1.75rem, 2.7vw, 2.75rem);
 }
 
 .metric-card--compact .metric-detail {
-  max-width: 28ch;
+  max-width: 24ch;
+  font-size: 0.86rem;
 }
 
 .split-canvas {
@@ -536,24 +538,25 @@ input {
 }
 
 .site-footer {
-  width: min(1480px, calc(100% - 32px));
-  margin: 14px auto 18px;
-  padding: 16px 20px;
-  border-radius: 22px;
-  background: rgba(36, 41, 46, 0.7);
+  width: 100%;
+  margin-top: auto;
+  padding: 18px 0 22px;
+  background: rgba(0, 0, 0, 0.38);
   border-top: 1px solid rgba(242, 245, 243, 0.12);
-  border-left: 1px solid var(--line);
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  box-shadow: var(--shadow);
+  box-shadow: none;
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
+}
+
+.site-footer-inner {
+  width: min(1480px, calc(100% - 32px));
+  margin: 0 auto;
 }
 
 .site-footer-text {
   margin: 0;
   text-align: center;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.72);
   letter-spacing: 0.02em;
 }
@@ -772,7 +775,7 @@ input {
   }
 
   .hero-title {
-    max-width: 14ch;
+    max-width: 16ch;
   }
 
   .policy-grid,
@@ -780,8 +783,12 @@ input {
     grid-template-columns: 1fr;
   }
 
+  .metric-grid--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .metric-card--compact {
-    min-height: 152px;
+    min-height: 132px;
   }
 }
 
@@ -809,14 +816,15 @@ input {
   }
 
   .hero-panel {
-    padding: 20px;
+    padding: 20px 18px 18px;
   }
 
   .hero-title {
-    font-size: clamp(2rem, 10vw, 3.2rem);
+    font-size: clamp(2rem, 9vw, 3rem);
     max-width: 100%;
   }
 
+  .metric-grid,
   .metric-grid--compact {
     grid-template-columns: 1fr;
   }
@@ -829,8 +837,7 @@ input {
     grid-column: 2;
   }
 
-  .site-footer {
+  .site-footer-inner {
     width: min(100% - 20px, 1480px);
-    margin-bottom: 12px;
   }
 }
