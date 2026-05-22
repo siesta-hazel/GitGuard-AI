@@ -24,13 +24,13 @@
   position: relative;
   z-index: 1;
   backdrop-filter: var(--glass-blur);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(242, 245, 243, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(15, 191, 62, 0.25);
   border-radius: 0.75rem;
   padding: 3rem;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .auth-header {
