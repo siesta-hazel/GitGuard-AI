@@ -42,6 +42,18 @@ body {
   overflow-x: hidden;
 }
 
+.history-page {
+  margin: 0;
+  color: var(--text);
+  font-family: Inter, sans-serif;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255, 214, 102, 0.14), transparent 34%),
+    radial-gradient(circle at 82% 12%, rgba(255, 255, 255, 0.05), transparent 30%),
+    radial-gradient(circle at 68% 82%, rgba(58, 134, 255, 0.12), transparent 26%),
+    linear-gradient(180deg, #050507 0%, #010101 100%);
+  overflow-x: hidden;
+}
+
 body::before,
 body::after {
   content: '';

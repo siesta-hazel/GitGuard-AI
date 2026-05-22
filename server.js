@@ -15,7 +15,15 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/health', (req, res) => res.status(200).send('OK'));
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'gitguard-ai',
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    port: Number(process.env.PORT || 3000),
+  });
+});
 
 app.use(express.json({
   verify: (req, res, buf) => { req.rawBody = buf; }

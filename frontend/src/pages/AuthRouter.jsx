@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Github } from 'lucide-react';
 import '../styles/auth.css';
 
@@ -110,7 +110,7 @@ function AuthRouter() {
                   placeholder="Enter your email"
                   value={loginData.email}
                   onChange={handleLoginChange}
-                  className={input-field }
+                  className={`input-field ${errors.email ? 'error' : ''}`}
                 />
                 {errors.email && <span className="error-message">{errors.email}</span>}
               </div>
@@ -124,7 +124,7 @@ function AuthRouter() {
                   placeholder="Enter your password"
                   value={loginData.password}
                   onChange={handleLoginChange}
-                  className={input-field }
+                  className={`input-field ${errors.password ? 'error' : ''}`}
                 />
                 {errors.password && <span className="error-message">{errors.password}</span>}
               </div>
@@ -132,7 +132,7 @@ function AuthRouter() {
               <button type="submit" className="submit-button">Sign In</button>
 
               <p className="toggle-text">
-                New to the sentinel? {' '}
+                New to the sentinel?{' '}
                 <button
                   type="button"
                   onClick={toggleMode}
@@ -155,7 +155,7 @@ function AuthRouter() {
                   placeholder="Enter your full name"
                   value={registerData.name}
                   onChange={handleRegisterChange}
-                  className={input-field }
+                  className={`input-field ${errors.name ? 'error' : ''}`}
                 />
                 {errors.name && <span className="error-message">{errors.name}</span>}
               </div>
@@ -169,7 +169,7 @@ function AuthRouter() {
                   placeholder="Enter your email"
                   value={registerData.email}
                   onChange={handleRegisterChange}
-                  className={input-field }
+                  className={`input-field ${errors.email ? 'error' : ''}`}
                 />
                 {errors.email && <span className="error-message">{errors.email}</span>}
               </div>
@@ -183,7 +183,7 @@ function AuthRouter() {
                   placeholder="Create a password"
                   value={registerData.password}
                   onChange={handleRegisterChange}
-                  className={input-field }
+                  className={`input-field ${errors.password ? 'error' : ''}`}
                 />
                 {errors.password && <span className="error-message">{errors.password}</span>}
               </div>
@@ -191,7 +191,7 @@ function AuthRouter() {
               <button type="submit" className="submit-button">Create Account</button>
 
               <p className="toggle-text">
-                Already have an account? {' '}
+                Already have an account?{' '}
                 <button
                   type="button"
                   onClick={toggleMode}

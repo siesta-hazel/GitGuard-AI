@@ -1,228 +1,91 @@
 .dashboard-page {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
-  background: linear-gradient(135deg, #000000 0%, #0a0a0a 100%);
-  position: relative;
-}
-
-.dashboard-page::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 20% 50%, rgba(15, 191, 62, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(15, 191, 62, 0.03) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(15, 191, 62, 0.16), transparent 42%),
+    radial-gradient(circle at 80% 10%, rgba(15, 191, 62, 0.1), transparent 35%),
+    linear-gradient(155deg, #030303 0%, #0b0b0b 55%, #000000 100%);
 }
 
 .dashboard-navbar {
-  position: relative;
-  z-index: 10;
-  backdrop-filter: blur(12px);
-  background: rgba(0, 0, 0, 0.7);
-  border-bottom: 1px solid rgba(15, 191, 62, 0.2);
-  padding: 1.5rem 2rem;
   position: sticky;
   top: 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  z-index: 20;
+  backdrop-filter: blur(14px);
+  background: rgba(8, 10, 9, 0.64);
+  border-bottom: 1px solid rgba(242, 245, 243, 0.2);
 }
 
 .dashboard-navbar-container {
-  max-width: 1400px;
+  max-width: 1120px;
   margin: 0 auto;
+  padding: 0.95rem 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.navbar-brand {
+.dashboard-brand {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-}
-
-.brand-title {
-  font-size: 1.25rem;
+  gap: 0.55rem;
+  color: #0fbf3e;
   font-weight: 700;
-  letter-spacing: -0.5px;
-  color: var(--white);
 }
 
-.logout-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(15, 191, 62, 0.3);
-  color: var(--github-green);
-  font-size: 0.95rem;
-  font-weight: 500;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all var(--transition-smooth);
+.dashboard-link {
+  color: #f2f5f3;
+  border: 1px solid rgba(242, 245, 243, 0.28);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
 }
 
-.logout-button:hover {
-  background: rgba(15, 191, 62, 0.15);
-  border-color: var(--github-green);
-  box-shadow: 0 4px 16px rgba(15, 191, 62, 0.2);
-  transform: translateY(-2px);
-}
-
-.dashboard-content {
-  flex: 1;
-  padding: 4rem 2rem;
-  position: relative;
-  z-index: 1;
-}
-
-.dashboard-header {
-  max-width: 1400px;
-  margin: 0 auto 3rem;
-  text-align: center;
+.dashboard-main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 3rem 1.25rem;
 }
 
 .dashboard-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--white);
-  margin-bottom: 0.5rem;
-  text-shadow: 0 4px 12px rgba(15, 191, 62, 0.1);
-  letter-spacing: -0.75px;
+  font-size: clamp(2rem, 6vw, 3rem);
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: #ffffff;
 }
 
 .dashboard-subtitle {
-  font-size: 1.125rem;
-  color: rgba(242, 245, 243, 0.7);
-  letter-spacing: 0.25px;
+  margin-top: 0.6rem;
+  margin-bottom: 2rem;
+  color: rgba(242, 245, 243, 0.82);
 }
 
-.dashboard-grid {
-  max-width: 1400px;
-  margin: 0 auto;
+.dashboard-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
 }
 
 .dashboard-card {
-  backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(15, 191, 62, 0.2);
-  border-radius: 0.75rem;
-  padding: 2.5rem 2rem;
-  display: flex;
-  flex-direction: column;
-  transition: all var(--transition-smooth);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(242, 245, 243, 0.24);
+  background: rgba(242, 245, 243, 0.07);
+  backdrop-filter: blur(16px);
+  border-radius: 14px;
+  padding: 1.1rem;
+  color: #f2f5f3;
 }
 
-.dashboard-card:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(15, 191, 62, 0.4);
-  box-shadow: 0 12px 48px rgba(15, 191, 62, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: translateY(-6px);
+.dashboard-card h3 {
+  margin: 0.6rem 0;
+  color: #ffffff;
 }
 
-.card-title {
-  font-size: 1.375rem;
-  font-weight: 600;
-  color: var(--white);
-  margin-bottom: 1rem;
-  letter-spacing: -0.25px;
-}
-
-.card-content {
-  font-size: 0.95rem;
-  color: rgba(242, 245, 243, 0.7);
+.dashboard-card p {
+  margin: 0;
+  color: rgba(242, 245, 243, 0.84);
   line-height: 1.6;
-  margin: 0;
-  flex-grow: 1;
 }
 
-.dashboard-footer {
-  position: relative;
-  z-index: 10;
-  backdrop-filter: blur(12px);
-  background: rgba(0, 0, 0, 0.7);
-  border-top: 1px solid rgba(15, 191, 62, 0.2);
-  padding: 2rem;
-  text-align: center;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.footer-text {
-  font-size: 0.95rem;
-  color: rgba(242, 245, 243, 0.7);
-  font-weight: 500;
-  letter-spacing: 0.25px;
-  margin: 0;
-}
-
-@media (max-width: 768px) {
-  .dashboard-navbar {
-    padding: 1rem 1.5rem;
-  }
-
-  .dashboard-navbar-container {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .dashboard-content {
-    padding: 2rem 1.5rem;
-  }
-
-  .dashboard-title {
-    font-size: 1.75rem;
-  }
-
-  .dashboard-subtitle {
-    font-size: 1rem;
-  }
-
-  .dashboard-card {
-    padding: 1.75rem 1.5rem;
-  }
-
-  .card-title {
-    font-size: 1.125rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .dashboard-navbar {
-    padding: 0.75rem 1rem;
-  }
-
-  .dashboard-title {
-    font-size: 1.5rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .dashboard-subtitle {
-    font-size: 0.9rem;
-  }
-
-  .dashboard-grid {
-    gap: 1.5rem;
-  }
-
-  .dashboard-card {
-    padding: 1.5rem 1rem;
-  }
-
-  .card-title {
-    font-size: 1rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .card-content {
-    font-size: 0.9rem;
+@media (max-width: 900px) {
+  .dashboard-cards {
+    grid-template-columns: 1fr;
   }
 }

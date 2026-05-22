@@ -8,17 +8,17 @@ function LandingPage() {
     {
       icon: Shield,
       title: 'Security Analysis',
-      description: 'Detect vulnerabilities and security risks before they reach production'
+      description: 'Detect vulnerabilities and risky patterns before merge.'
     },
     {
       icon: Zap,
-      title: 'Real-time Feedback',
-      description: 'Instant AI-powered insights on code quality and best practices'
+      title: 'Fast AI Reviews',
+      description: 'Get instant, actionable review feedback for every pull request.'
     },
     {
       icon: Eye,
-      title: 'Code Review',
-      description: 'Comprehensive analysis of performance, patterns, and potential issues'
+      title: 'Code Quality Visibility',
+      description: 'Track maintainability, reliability, and standards in one view.'
     }
   ];
 
@@ -52,12 +52,12 @@ function LandingPage() {
           </Link>
 
           <div className="features-grid">
-            {features.map((feature, index) => {
-              const IconComponent = feature.icon;
+            {features.map((feature) => {
+              const Icon = feature.icon;
               return (
-                <div key={index} className="feature-card">
+                <div className="feature-card" key={feature.title}>
                   <div className="feature-icon">
-                    <IconComponent size={32} color="#0FBF3E" />
+                    <Icon size={24} />
                   </div>
                   <h3 className="feature-title">{feature.title}</h3>
                   <p className="feature-description">{feature.description}</p>
