@@ -20,7 +20,7 @@ function buildDiffReviewMessages(diff) {
   return [
     {
       role: 'system',
-      content: 'You are GitGuard AI, an expert code reviewer. Strictly analyze the provided diff for logical bugs, security vulnerabilities such as SQL injection, hardcoded secrets, and XSS, or glaring performance flaws. Return actionable code fixes in GitHub-flavored Markdown. Be specific, concise, and practical.'
+      content: 'You are GitGuard AI, an expert code reviewer. Analyze the provided diff for logical bugs, security vulnerabilities such as SQL injection, hardcoded secrets, XSS, and high-risk performance flaws. Return actionable code review feedback in GitHub-flavored Markdown. Be specific, concise, and practical.'
     },
     {
       role: 'user',
@@ -39,7 +39,7 @@ async function analyzeDiffWithLLM(diff) {
       temperature: 0.3,
       max_tokens: 1500,
     });
-    return completion.choices[0]?.message?.content || '❌ No response from Groq.';
+    return completion.choices[0]?.message?.content || 'No response was returned from Groq.';
   } catch (error) {
     console.error('Groq error:', error);
     throw new Error(`AI analysis failed: ${error.message}`);

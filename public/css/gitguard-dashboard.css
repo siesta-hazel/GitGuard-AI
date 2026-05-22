@@ -853,3 +853,69 @@ input {
     width: min(100% - 20px, 1480px);
   }
 }
+
+.dashboard-page .split-canvas,
+.history-page .history-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.dashboard-page .canvas-panel,
+.dashboard-page .repo-section,
+.dashboard-page .history-section,
+.history-page .history-section {
+  min-width: 0;
+}
+
+.dashboard-page .panel-heading,
+.dashboard-page .section-heading,
+.history-page .section-heading {
+  min-width: 0;
+}
+
+.dashboard-page .webhook-item,
+.history-page .history-card,
+.dashboard-page .repo-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dashboard-page .webhook-body,
+.dashboard-page .history-body,
+.dashboard-page .repo-body,
+.history-page .history-body {
+  min-width: 0;
+}
+
+.dashboard-page .webhook-title,
+.dashboard-page .history-title,
+.dashboard-page .repo-title,
+.history-page .history-title,
+.dashboard-page .webhook-summary,
+.dashboard-page .webhook-detail,
+.dashboard-page .webhook-excerpt,
+.dashboard-page .history-surface pre,
+.dashboard-page .markdown-surface pre,
+.history-page .history-surface pre {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.dashboard-page .review-frame,
+.dashboard-page .review-panel,
+.dashboard-page .markdown-surface,
+.history-page .history-card,
+.history-page .history-surface {
+  min-width: 0;
+}
+
+.dashboard-page .markdown-surface,
+.history-page .history-surface {
+  overflow: auto;
+}
+
+.dashboard-page .markdown-surface pre,
+.history-page .history-surface pre {
+  font-family: 'Courier New', monospace;
+  white-space: pre-wrap;
+  line-height: 1.75;
+}

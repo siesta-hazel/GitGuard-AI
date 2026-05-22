@@ -1,208 +1,226 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Github } from 'lucide-react';
+import { Github, Lock, Mail, User } from 'lucide-react';
 import '../styles/auth.css';
+
+const initialLoginData = { email: '', password: '' };
+const initialRegisterData = { name: '', email: '', password: '' };
 
 function AuthRouter() {
   const [isLogin, setIsLogin] = useState(true);
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [registerData, setRegisterData] = useState({ name: '', email: '', password: '' });
+  const [loginData, setLoginData] = useState(initialLoginData);
+  const [registerData, setRegisterData] = useState(initialRegisterData);
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleLoginChange = (e) => {
-    const { name, value } = e.target;
-    setLoginData(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => ({ ...prev, [name]: '' }));
-  };
-
-  const handleRegisterChange = (e) => {
-    const { name, value } = e.target;
-    setRegisterData(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => ({ ...prev, [name]: '' }));
-  };
-
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    const newErrors = {};
-
-    if (!loginData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(loginData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-
-    if (!loginData.password) {
-      newErrors.password = 'Password is required';
-    } else if (loginData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    console.log('Login attempt:', loginData);
-    navigate('/dashboard');
-  };
-
-  const handleRegisterSubmit = (e) => {
-    e.preventDefault();
-    const newErrors = {};
-
-    if (!registerData.name) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!registerData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(registerData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-
-    if (!registerData.password) {
-      newErrors.password = 'Password is required';
-    } else if (registerData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    console.log('Register attempt:', registerData);
-    navigate('/dashboard');
-  };
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const toggleMode = () => {
-    setIsLogin(!isLogin);
+    setIsLogin((current) => !current);
+    setLoginData(initialLoginData);
+    setRegisterData(initialRegisterData);
     setErrors({});
-    setLoginData({ email: '', password: '' });
-    setRegisterData({ name: '', email: '', password: '' });
+    setSubmitError('');
+  };
+
+  const handleLoginChange = (event) => {
+    const { name, value } = event.target;
+    setLoginData((previous) => ({ ...previous, [name]: value }));
+    setErrors((previous) => ({ ...previous, [name]: '' }));
+  };
+
+  const handleRegisterChange = (event) => {
+    const { name, value } = event.target;
+    setRegisterData((previous) => ({ ...previous, [name]: value }));
+    setErrors((previous) => ({ ...previous, [name]: '' }));
+  };
+
+  const validatePayload = () => {
+    const nextErrors = {};
+
+    if (isLogin) {
+      if (!loginData.email) {
+        nextErrors.email = 'Email is required';
+      } else if (!validateEmail(loginData.email)) {
+        nextErrors.email = 'Enter a valid email address';
+      }
+
+      if (!loginData.password) {
+        nextErrors.password = 'Password is required';
+      } else if (loginData.password.length < 6) {
+        nextErrors.password = 'Password must be at least 6 characters';
+      }
+    } else {
+      if (!registerData.name.trim()) {
+        nextErrors.name = 'Name is required';
+      }
+
+      if (!registerData.email) {
+        nextErrors.email = 'Email is required';
+      } else if (!validateEmail(registerData.email)) {
+        nextErrors.email = 'Enter a valid email address';
+      }
+
+      if (!registerData.password) {
+        nextErrors.password = 'Password is required';
+      } else if (registerData.password.length < 6) {
+        nextErrors.password = 'Password must be at least 6 characters';
+      }
+    }
+
+    return nextErrors;
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const nextErrors = validatePayload();
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const payload = isLogin
+        ? { email: loginData.email.trim(), password: loginData.password }
+        : {
+            name: registerData.name.trim(),
+            email: registerData.email.trim(),
+            password: registerData.password,
+          };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Authentication failed');
+      }
+
+      if (data.token) {
+        localStorage.setItem('gitguard_session_token', data.token);
+      }
+
+      navigate('/dashboard');
+    } catch (error) {
+      setSubmitError(error.message || 'Unable to complete authentication');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="auth-page">
-      <div className="auth-container">
-        <div className="auth-header">
+      <div className="auth-glow auth-glow--one" aria-hidden="true" />
+      <div className="auth-glow auth-glow--two" aria-hidden="true" />
+
+      <div className="auth-shell">
+        <div className="auth-brand">
           <Github size={32} color="#0FBF3E" />
-          <h1 className="auth-title">GitGuard AI</h1>
+          <div>
+            <h1>GitGuard AI</h1>
+            <p>Secure access for review operations</p>
+          </div>
         </div>
 
-        <div className="auth-form-wrapper">
-          {isLogin ? (
-            <form onSubmit={handleLoginSubmit} className="auth-form">
-              <h2 className="form-title">Sign In</h2>
+        <section className="auth-card" aria-label="Authentication form">
+          <div className="auth-card__header">
+            <h2>{isLogin ? 'Sign in to continue' : 'Create your account'}</h2>
+            <p>
+              {isLogin
+                ? 'Use your existing credentials to enter the command surface.'
+                : 'Register a new operator account with a signed session token.'}
+            </p>
+          </div>
 
-              <div className="input-container">
-                <label htmlFor="login-email" className="input-label">Email</label>
+          <form className="auth-form" onSubmit={handleSubmit}>
+            {!isLogin && (
+              <label className="auth-field">
+                <span>Name</span>
+                <div className="auth-input-wrap">
+                  <User size={16} />
+                  <input
+                    type="text"
+                    name="name"
+                    value={registerData.name}
+                    onChange={handleRegisterChange}
+                    placeholder="Your full name"
+                    autoComplete="name"
+                  />
+                </div>
+                {errors.name && <small>{errors.name}</small>}
+              </label>
+            )}
+
+            <label className="auth-field">
+              <span>Email</span>
+              <div className="auth-input-wrap">
+                <Mail size={16} />
                 <input
-                  id="login-email"
                   type="email"
                   name="email"
-                  placeholder="Enter your email"
-                  value={loginData.email}
-                  onChange={handleLoginChange}
-                  className={`input-field ${errors.email ? 'error' : ''}`}
+                  value={isLogin ? loginData.email : registerData.email}
+                  onChange={isLogin ? handleLoginChange : handleRegisterChange}
+                  placeholder="name@company.com"
+                  autoComplete="email"
                 />
-                {errors.email && <span className="error-message">{errors.email}</span>}
               </div>
+              {errors.email && <small>{errors.email}</small>}
+            </label>
 
-              <div className="input-container">
-                <label htmlFor="login-password" className="input-label">Password</label>
+            <label className="auth-field">
+              <span>Password</span>
+              <div className="auth-input-wrap">
+                <Lock size={16} />
                 <input
-                  id="login-password"
                   type="password"
                   name="password"
-                  placeholder="Enter your password"
-                  value={loginData.password}
-                  onChange={handleLoginChange}
-                  className={`input-field ${errors.password ? 'error' : ''}`}
+                  value={isLogin ? loginData.password : registerData.password}
+                  onChange={isLogin ? handleLoginChange : handleRegisterChange}
+                  placeholder="Minimum 6 characters"
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
                 />
-                {errors.password && <span className="error-message">{errors.password}</span>}
               </div>
+              {errors.password && <small>{errors.password}</small>}
+            </label>
 
-              <button type="submit" className="submit-button">Sign In</button>
+            {submitError && <div className="auth-banner">{submitError}</div>}
 
-              <p className="toggle-text">
-                New to the sentinel?{' '}
-                <button
-                  type="button"
-                  onClick={toggleMode}
-                  className="toggle-link"
-                >
-                  Create an account
-                </button>
-              </p>
-            </form>
-          ) : (
-            <form onSubmit={handleRegisterSubmit} className="auth-form">
-              <h2 className="form-title">Create Account</h2>
+            <button type="submit" className="auth-submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
+            </button>
 
-              <div className="input-container">
-                <label htmlFor="register-name" className="input-label">Full Name</label>
-                <input
-                  id="register-name"
-                  type="text"
-                  name="name"
-                  placeholder="Enter your full name"
-                  value={registerData.name}
-                  onChange={handleRegisterChange}
-                  className={`input-field ${errors.name ? 'error' : ''}`}
-                />
-                {errors.name && <span className="error-message">{errors.name}</span>}
-              </div>
-
-              <div className="input-container">
-                <label htmlFor="register-email" className="input-label">Email</label>
-                <input
-                  id="register-email"
-                  type="email"
-                  name="email"
-                  placeholder="Enter your email"
-                  value={registerData.email}
-                  onChange={handleRegisterChange}
-                  className={`input-field ${errors.email ? 'error' : ''}`}
-                />
-                {errors.email && <span className="error-message">{errors.email}</span>}
-              </div>
-
-              <div className="input-container">
-                <label htmlFor="register-password" className="input-label">Password</label>
-                <input
-                  id="register-password"
-                  type="password"
-                  name="password"
-                  placeholder="Create a password"
-                  value={registerData.password}
-                  onChange={handleRegisterChange}
-                  className={`input-field ${errors.password ? 'error' : ''}`}
-                />
-                {errors.password && <span className="error-message">{errors.password}</span>}
-              </div>
-
-              <button type="submit" className="submit-button">Create Account</button>
-
-              <p className="toggle-text">
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={toggleMode}
-                  className="toggle-link"
-                >
-                  Sign in here
-                </button>
-              </p>
-            </form>
-          )}
-        </div>
+            <div className="auth-switcher">
+              {isLogin ? (
+                <p>
+                  New to the sentinel?{' '}
+                  <button type="button" onClick={toggleMode}>
+                    Create an account
+                  </button>
+                </p>
+              ) : (
+                <p>
+                  Already have an account?{' '}
+                  <button type="button" onClick={toggleMode}>
+                    Sign in here
+                  </button>
+                </p>
+              )}
+            </div>
+          </form>
+        </section>
       </div>
     </div>
   );
