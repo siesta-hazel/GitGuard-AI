@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Github, GitPullRequest, Lock, ShieldCheck } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import '../styles/landing.css';
 
 const highlights = [
@@ -81,20 +82,10 @@ function LandingPage() {
                 <p>Readable guidance is written back to GitHub and persisted for audit-ready history.</p>
               </div>
             </div>
-            
+
             <div className="hero-mockup">
               <div className="hero-mockup__canvas">
-                <pre className="code-diff">// file: src/components/Button.jsx
---- a/src/components/Button.jsx
-+++ b/src/components/Button.jsx
-@@
- - export default function Button({ children }) {
- -   return <button className="btn">{children}</button>;
- - }
- +export default function Button({ children, variant = 'primary' }) {
- +  return <button className={`btn btn--${variant}`}>{children}</button>;
- +}
-</pre>
+                <pre className="code-diff">{"// file: src/components/Button.jsx\n--- a/src/components/Button.jsx\n+++ b/src/components/Button.jsx\n@@\n - export default function Button({ children }) {\n -   return <button className=\"btn\">{children}</button>;\n - }\n +export default function Button({ children, variant = 'primary' }) {\n +  return <button className={`btn btn--${variant}`}>{children}</button>;\n +}\n"}</pre>
               </div>
             </div>
           </div>
