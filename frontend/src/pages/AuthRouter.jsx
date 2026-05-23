@@ -15,6 +15,11 @@ function AuthRouter() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    const token = localStorage.getItem('gitguard_session_token');
+    if (token) navigate('/dashboard');
+  }, [navigate]);
+
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const toggleMode = () => {

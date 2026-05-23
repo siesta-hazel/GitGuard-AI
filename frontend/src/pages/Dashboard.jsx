@@ -60,6 +60,18 @@ function Dashboard() {
       </header>
 
       <main className="dashboard-main">
+        <section className="dashboard-metrics">
+          <div className="metrics-grid">
+            <div className="metric-tile">
+              <strong>Stored Reviews</strong>
+              <span className="metric-value">1,248</span>
+            </div>
+            <div className="metric-tile">
+              <strong>System Status</strong>
+              <span className="metric-value">Operational</span>
+            </div>
+          </div>
+        </section>
         <section className="dashboard-hero">
           <div>
             <p className="dashboard-kicker">Control center</p>
@@ -129,7 +141,9 @@ function Dashboard() {
                 <FileCode2 size={16} />
                 <span>Courier New rendering for review output</span>
               </div>
-              <pre>{reviewHistory}</pre>
+              <div className="history-console__body">
+                <pre>{reviewHistory}</pre>
+              </div>
             </div>
           </article>
         </section>

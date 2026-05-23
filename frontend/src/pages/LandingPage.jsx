@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Github, GitPullRequest, Lock, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, Github, GitPullRequest, Lock, ShieldCheck } from 'lucide-react';
 import '../styles/landing.css';
 
 const highlights = [
@@ -79,6 +79,22 @@ function LandingPage() {
                 <span className="command-label">Review output</span>
                 <strong>Markdown response</strong>
                 <p>Readable guidance is written back to GitHub and persisted for audit-ready history.</p>
+              </div>
+            </div>
+            
+            <div className="hero-mockup">
+              <div className="hero-mockup__canvas">
+                <pre className="code-diff">// file: src/components/Button.jsx
+--- a/src/components/Button.jsx
++++ b/src/components/Button.jsx
+@@
+ - export default function Button({ children }) {
+ -   return <button className="btn">{children}</button>;
+ - }
+ +export default function Button({ children, variant = 'primary' }) {
+ +  return <button className={`btn btn--${variant}`}>{children}</button>;
+ +}
+</pre>
               </div>
             </div>
           </div>
