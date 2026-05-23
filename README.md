@@ -13,7 +13,12 @@ GitGuard AI is a full-stack pull request review assistant that analyzes GitHub d
 ## Setup
 
 1. Install dependencies with `npm install`.
-2. Set `GITHUB_ACCESS_TOKEN`, `GITHUB_WEBHOOK_SECRET`, `GROQ_API_KEY`, and `JWT_SECRET`.
+2. Copy `.env.example` to `.env` and fill in real values for the required variables:
+	- `GITHUB_ACCESS_TOKEN`
+	- `GITHUB_WEBHOOK_SECRET`
+	- `GROQ_API_KEY`
+	- `JWT_SECRET`
+	(Optionally set `PORT`.) `.env` is already listed in `.gitignore` to avoid leaking secrets.
 3. Run the backend with `npm start`.
 4. Run the frontend with `npm run frontend`.
 
