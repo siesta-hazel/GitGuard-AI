@@ -1,6 +1,22 @@
 const path = require('path');
 
 require('dotenv').config();
+
+// Validate required environment variables. In production, exit if any are missing.
+function validateEnv(required = []) {
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length === 0) return;
+
+  const message = `Missing required environment variables: ${missing.join(', ')}`;
+  if (process.env.NODE_ENV === 'production') {
+    console.error(message);
+    process.exit(1);
+  }
+
+  console.warn(message);
+}
+
+validateEnv(['GITHUB_WEBHOOK_SECRET', 'GITHUB_ACCESS_TOKEN', 'GROQ_API_KEY', 'JWT_SECRET']);
 const express = require('express');
 const { Octokit } = require('@octokit/rest');
 const authRouter = require('./routes/auth');
