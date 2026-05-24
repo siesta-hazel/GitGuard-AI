@@ -10,7 +10,7 @@ function validateEmail(email) {
 }
 
 function signSessionToken(user) {
-  const secret = process.env.JWT_SECRET;
+  const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-local-jwt-secret');
 
   if (!secret) {
     throw new Error('JWT_SECRET is not set');

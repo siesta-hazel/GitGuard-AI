@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Github, GitPullRequest, Lock, ShieldCheck } from 'lucide-react';
-import { Sparkles } from 'lucide-react';
+import { ArrowRight, Github, GitPullRequest, Lock, Moon, ShieldCheck, Sun } from 'lucide-react';
 import '../styles/landing.css';
 
 const highlights = [
@@ -22,7 +21,39 @@ const highlights = [
   },
 ];
 
-function LandingPage() {
+function LandingPage({ theme, onToggleTheme }) {
+  const [activePanel, setActivePanel] = useState('live');
+
+  const panelContent = useMemo(() => {
+    if (activePanel === 'diff') {
+      return {
+        first: {
+          label: 'Diff analyzer',
+          title: 'Structured patch parsing',
+          body: 'File-level change summaries, risk markers, and semantic context are extracted before generating review output.',
+        },
+        second: {
+          label: 'Quality gate',
+          title: 'Actionable issue detection',
+          body: 'Potential regressions, missing validation paths, and unsafe data handling patterns are highlighted for reviewers.',
+        },
+      };
+    }
+
+    return {
+      first: {
+        label: 'Incoming webhook',
+        title: 'pull_request.opened',
+        body: 'Raw payload verification, diff retrieval, and AI analysis are orchestrated server-side.',
+      },
+      second: {
+        label: 'Review output',
+        title: 'Markdown response',
+        body: 'Readable guidance is written back to GitHub and persisted for audit-ready history.',
+      },
+    };
+  }, [activePanel]);
+
   return (
     <div className="landing-page">
       <div className="landing-glow landing-glow--one" aria-hidden="true" />
@@ -35,6 +66,9 @@ function LandingPage() {
         </div>
 
         <nav className="landing-nav__links" aria-label="Primary">
+          <button type="button" className="theme-toggle" onClick={onToggleTheme} aria-label="Toggle theme">
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
           <Link to="/auth">Sign In</Link>
           <Link to="/dashboard">Dashboard</Link>
         </nav>
@@ -43,11 +77,6 @@ function LandingPage() {
       <main className="landing-main">
         <section className="hero-shell">
           <div className="hero-copy">
-            <div className="hero-kicker">
-              <Sparkles size={16} />
-              <span>Commercial-grade pull request intelligence</span>
-            </div>
-
             <h1>Secure code review automation with a premium operational interface.</h1>
             <p>
               GitGuard AI turns webhook traffic into fast, readable, and actionable review feedback.
@@ -59,27 +88,38 @@ function LandingPage() {
                 <span>Get Started</span>
                 <ArrowRight size={18} />
               </Link>
-              <div className="hero-note">Secure session flow, live review logging, and clean review delivery.</div>
             </div>
           </div>
 
           <div className="hero-panel">
             <div className="hero-panel__topline">
-              <span className="panel-chip panel-chip--active">Live monitoring</span>
-              <span className="panel-chip">Diff analysis</span>
+              <button
+                type="button"
+                className={`panel-chip ${activePanel === 'live' ? 'panel-chip--active' : ''}`}
+                onClick={() => setActivePanel('live')}
+              >
+                Live monitoring
+              </button>
+              <button
+                type="button"
+                className={`panel-chip ${activePanel === 'diff' ? 'panel-chip--active' : ''}`}
+                onClick={() => setActivePanel('diff')}
+              >
+                Diff analysis
+              </button>
             </div>
 
             <div className="hero-panel__content">
               <div className="command-card">
-                <span className="command-label">Incoming webhook</span>
-                <strong>pull_request.opened</strong>
-                <p>Raw payload verification, diff retrieval, and AI analysis are orchestrated server-side.</p>
+                <span className="command-label">{panelContent.first.label}</span>
+                <strong>{panelContent.first.title}</strong>
+                <p>{panelContent.first.body}</p>
               </div>
 
               <div className="command-card command-card--accent">
-                <span className="command-label">Review output</span>
-                <strong>Markdown response</strong>
-                <p>Readable guidance is written back to GitHub and persisted for audit-ready history.</p>
+                <span className="command-label">{panelContent.second.label}</span>
+                <strong>{panelContent.second.title}</strong>
+                <p>{panelContent.second.body}</p>
               </div>
             </div>
 

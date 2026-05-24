@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, ArrowRight, FileCode2, GitPullRequest, Github, ShieldCheck } from 'lucide-react';
+import { Activity, ArrowRight, FileCode2, GitPullRequest, Github, Moon, ShieldCheck, Sun } from 'lucide-react';
 import '../styles/dashboard.css';
 
 const webhookStream = [
@@ -38,7 +38,7 @@ const reviewHistory = `# Latest review
 - Review history persisted
 `;
 
-function Dashboard() {
+function Dashboard({ theme, onToggleTheme }) {
   return (
     <div className="dashboard-page">
       <div className="dashboard-glow dashboard-glow--one" aria-hidden="true" />
@@ -52,11 +52,15 @@ function Dashboard() {
             <span>Operational review surface</span>
           </div>
         </div>
-
-        <Link to="/" className="dashboard-home-link">
-          Back to Home
-          <ArrowRight size={16} />
-        </Link>
+        <div className="dashboard-nav-actions">
+          <button type="button" className="theme-toggle" onClick={onToggleTheme} aria-label="Toggle theme">
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <Link to="/" className="dashboard-home-link">
+            Back to Home
+            <ArrowRight size={16} />
+          </Link>
+        </div>
       </header>
 
       <main className="dashboard-main">

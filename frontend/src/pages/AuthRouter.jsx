@@ -1,18 +1,65 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Github, Lock, Mail, User } from 'lucide-react';
+import { Eye, EyeOff, Github, Lock, Mail, Moon, Sun, User } from 'lucide-react';
 import '../styles/auth.css';
 
 const initialLoginData = { email: '', password: '' };
 const initialRegisterData = { name: '', email: '', password: '' };
 
-function AuthRouter() {
+function resolveApiBaseUrl() {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  return '';
+}
+
+async function postAuthWithFallback(endpoint, payload) {
+  const baseCandidates = [
+    resolveApiBaseUrl(),
+    '',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:3003',
+  ];
+  const uniqueBases = [...new Set(baseCandidates)];
+
+  let lastError = null;
+  for (const baseUrl of uniqueBases) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const data = await response.json().catch(() => ({}));
+      return { response, data };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Unable to reach authentication service');
+}
+
+function AuthRouter({ theme, onToggleTheme }) {
   const [isLogin, setIsLogin] = useState(true);
   const [loginData, setLoginData] = useState(initialLoginData);
   const [registerData, setRegisterData] = useState(initialRegisterData);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -28,6 +75,8 @@ function AuthRouter() {
     setRegisterData(initialRegisterData);
     setErrors({});
     setSubmitError('');
+    setShowLoginPassword(false);
+    setShowRegisterPassword(false);
   };
 
   const handleLoginChange = (event) => {
@@ -99,16 +148,7 @@ function AuthRouter() {
             email: registerData.email.trim(),
             password: registerData.password,
           };
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
+      const { response, data } = await postAuthWithFallback(endpoint, payload);
 
       if (!response.ok) {
         throw new Error(data.error || 'Authentication failed');
@@ -120,7 +160,11 @@ function AuthRouter() {
 
       navigate('/dashboard');
     } catch (error) {
-      setSubmitError(error.message || 'Unable to complete authentication');
+      if (error.name === 'AbortError') {
+        setSubmitError('Request timed out. Check backend server and try again.');
+      } else {
+        setSubmitError(error.message || 'Unable to complete authentication');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -130,6 +174,9 @@ function AuthRouter() {
     <div className="auth-page">
       <div className="auth-glow auth-glow--one" aria-hidden="true" />
       <div className="auth-glow auth-glow--two" aria-hidden="true" />
+      <button type="button" className="theme-toggle auth-theme-toggle" onClick={onToggleTheme} aria-label="Toggle theme">
+        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
 
       <div className="auth-shell">
         <div className="auth-brand">
@@ -190,13 +237,27 @@ function AuthRouter() {
               <div className="auth-input-wrap">
                 <Lock size={16} />
                 <input
-                  type="password"
+                  type={isLogin ? (showLoginPassword ? 'text' : 'password') : (showRegisterPassword ? 'text' : 'password')}
                   name="password"
                   value={isLogin ? loginData.password : registerData.password}
                   onChange={isLogin ? handleLoginChange : handleRegisterChange}
                   placeholder="Minimum 6 characters"
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => {
+                    if (isLogin) {
+                      setShowLoginPassword((current) => !current);
+                    } else {
+                      setShowRegisterPassword((current) => !current);
+                    }
+                  }}
+                  aria-label={isLogin ? (showLoginPassword ? 'Hide password' : 'Show password') : (showRegisterPassword ? 'Hide password' : 'Show password')}
+                >
+                  {(isLogin ? showLoginPassword : showRegisterPassword) ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
               {errors.password && <small>{errors.password}</small>}
             </label>
