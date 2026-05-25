@@ -91,6 +91,25 @@ app.get('/api/reviews', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/api/dashboard-data', authenticateToken, async (req, res) => {
+  try {
+    const [repos, reviews] = await Promise.all([
+      listRepoSettings(),
+      listReviewHistory(100),
+    ]);
+    const metrics = {
+      totalRepos: repos.length,
+      activeRepos: repos.filter(repo => repo.active).length,
+      strictRepos: repos.filter(repo => repo.strict_mode).length,
+      recentReviews: reviews.length,
+    };
+    res.json({ metrics, reviews });
+  } catch (error) {
+    console.error('Failed to fetch dashboard data:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard data' });
+  }
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',

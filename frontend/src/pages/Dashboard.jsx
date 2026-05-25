@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileCode2, GitPullRequest, Github, Moon, Sun, LogOut, Calendar, Layers } from 'lucide-react';
+import { FileCode2, GitPullRequest, Github, Moon, Sun, LogOut, Calendar, Layers, Shield, ToggleLeft, Activity } from 'lucide-react';
 import '../styles/dashboard.css';
 
 function resolveApiBaseUrl() {
@@ -10,7 +10,7 @@ function resolveApiBaseUrl() {
   return '';
 }
 
-async function fetchReviewsWithFallback() {
+async function fetchDashboardDataWithFallback() {
   const baseCandidates = [
     resolveApiBaseUrl(),
     '',
@@ -28,7 +28,7 @@ async function fetchReviewsWithFallback() {
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
-      const response = await fetch(`${baseUrl}/api/reviews`, {
+      const response = await fetch(`${baseUrl}/api/dashboard-data`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -58,6 +58,12 @@ async function fetchReviewsWithFallback() {
 
 function Dashboard({ theme, onToggleTheme }) {
   const [reviews, setReviews] = useState([]);
+  const [metrics, setMetrics] = useState({
+    totalRepos: 0,
+    activeRepos: 0,
+    strictRepos: 0,
+    recentReviews: 0,
+  });
   const [selectedReview, setSelectedReview] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -65,13 +71,19 @@ function Dashboard({ theme, onToggleTheme }) {
 
   useEffect(() => {
     let active = true;
-    const loadReviews = async () => {
+    const loadData = async () => {
       try {
-        const data = await fetchReviewsWithFallback();
+        const data = await fetchDashboardDataWithFallback();
         if (active) {
-          setReviews(data || []);
-          if (data && data.length > 0) {
-            setSelectedReview(data[0]);
+          setReviews(data.reviews || []);
+          setMetrics(data.metrics || {
+            totalRepos: 0,
+            activeRepos: 0,
+            strictRepos: 0,
+            recentReviews: 0,
+          });
+          if (data.reviews && data.reviews.length > 0) {
+            setSelectedReview(data.reviews[0]);
           }
           setIsLoading(false);
         }
@@ -80,14 +92,14 @@ function Dashboard({ theme, onToggleTheme }) {
           if (err.message === 'Session expired') {
             navigate('/auth');
           } else {
-            setError(err.message || 'Failed to load reviews');
+            setError(err.message || 'Failed to load dashboard data');
             setIsLoading(false);
           }
         }
       }
     };
 
-    loadReviews();
+    loadData();
     return () => {
       active = false;
     };
@@ -132,12 +144,36 @@ function Dashboard({ theme, onToggleTheme }) {
         <section className="dashboard-metrics">
           <div className="metrics-grid">
             <div className="metric-tile">
-              <strong>Stored Reviews</strong>
-              <span className="metric-value">{reviews.length}</span>
+              <div className="metric-tile__header">
+                <strong>Stored Reviews</strong>
+                <Activity size={18} color="#0FBF3E" />
+              </div>
+              <span className="metric-value">{metrics.recentReviews}</span>
+              <p className="metric-desc">Total analyzed pull request summaries</p>
             </div>
             <div className="metric-tile">
-              <strong>System Status</strong>
-              <span className="metric-value">Operational</span>
+              <div className="metric-tile__header">
+                <strong>Tracked Repos</strong>
+                <Github size={18} color="#0FBF3E" />
+              </div>
+              <span className="metric-value">{metrics.totalRepos}</span>
+              <p className="metric-desc">Configured codebase integrations</p>
+            </div>
+            <div className="metric-tile">
+              <div className="metric-tile__header">
+                <strong>Active Repos</strong>
+                <ToggleLeft size={18} color="#0FBF3E" />
+              </div>
+              <span className="metric-value">{metrics.activeRepos}</span>
+              <p className="metric-desc">Ingesting webhook signal events</p>
+            </div>
+            <div className="metric-tile">
+              <div className="metric-tile__header">
+                <strong>Strict Mode</strong>
+                <Shield size={18} color="#0FBF3E" />
+              </div>
+              <span className="metric-value">{metrics.strictRepos}</span>
+              <p className="metric-desc">Codebases under strict review checks</p>
             </div>
           </div>
         </section>
@@ -246,3 +282,4 @@ function Dashboard({ theme, onToggleTheme }) {
 }
 
 export default Dashboard;
+
