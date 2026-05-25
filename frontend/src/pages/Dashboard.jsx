@@ -1,44 +1,109 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Activity, ArrowRight, FileCode2, GitPullRequest, Github, Moon, ShieldCheck, Sun } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FileCode2, GitPullRequest, Github, Moon, Sun, LogOut, Calendar, Layers } from 'lucide-react';
 import '../styles/dashboard.css';
 
-const webhookStream = [
-  {
-    title: 'pull_request.opened',
-    repo: 'acme/payments-service',
-    detail: 'Signature verified, diff fetched, and queued for review analysis.',
-  },
-  {
-    title: 'pull_request.synchronize',
-    repo: 'northwind/web-console',
-    detail: 'Incremental diff normalized and reprocessed for the latest commit set.',
-  },
-  {
-    title: 'review.comment.posted',
-    repo: 'orbital/platform-core',
-    detail: 'Markdown review appended to the pull request conversation thread.',
-  },
-];
+function resolveApiBaseUrl() {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  return '';
+}
 
-const reviewHistory = `# Latest review
+async function fetchReviewsWithFallback() {
+  const baseCandidates = [
+    resolveApiBaseUrl(),
+    '',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:3003',
+  ];
+  const uniqueBases = [...new Set(baseCandidates)];
+  const token = localStorage.getItem('gitguard_session_token');
 
-## Critical observations
-- Avoid sending raw webhook payload data into logs.
-- Ensure token storage remains scoped to authenticated browser sessions.
+  let lastError = null;
+  for (const baseUrl of uniqueBases) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-## Recommendations
-- Keep the webhook verifier length-safe and route-local.
-- Preserve database writes in a separate error boundary from GitHub comment posting.
-- Return structured JSON for auth flows so the frontend can recover cleanly.
+    try {
+      const response = await fetch(`${baseUrl}/api/reviews`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
-## Status
-- Analysis complete
-- Comment posted
-- Review history persisted
-`;
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('gitguard_session_token');
+        throw new Error('Session expired');
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Unable to reach review service');
+}
 
 function Dashboard({ theme, onToggleTheme }) {
+  const [reviews, setReviews] = useState([]);
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let active = true;
+    const loadReviews = async () => {
+      try {
+        const data = await fetchReviewsWithFallback();
+        if (active) {
+          setReviews(data || []);
+          if (data && data.length > 0) {
+            setSelectedReview(data[0]);
+          }
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (active) {
+          if (err.message === 'Session expired') {
+            navigate('/auth');
+          } else {
+            setError(err.message || 'Failed to load reviews');
+            setIsLoading(false);
+          }
+        }
+      }
+    };
+
+    loadReviews();
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('gitguard_session_token');
+    navigate('/auth');
+  };
+
+  const formatSize = (bytes) => {
+    if (bytes === undefined || bytes === null) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  };
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-glow dashboard-glow--one" aria-hidden="true" />
@@ -46,7 +111,7 @@ function Dashboard({ theme, onToggleTheme }) {
 
       <header className="dashboard-nav">
         <div className="dashboard-brand">
-          <Github size={22} color="#0FBF3E" />
+          <Github size={24} color="#0FBF3E" />
           <div>
             <strong>GitGuard AI</strong>
             <span>Operational review surface</span>
@@ -56,10 +121,10 @@ function Dashboard({ theme, onToggleTheme }) {
           <button type="button" className="theme-toggle" onClick={onToggleTheme} aria-label="Toggle theme">
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-          <Link to="/" className="dashboard-home-link">
-            Back to Home
-            <ArrowRight size={16} />
-          </Link>
+          <button type="button" className="dashboard-logout-btn" onClick={handleLogout} aria-label="Sign Out">
+            <LogOut size={16} />
+            <span>Sign Out</span>
+          </button>
         </div>
       </header>
 
@@ -68,7 +133,7 @@ function Dashboard({ theme, onToggleTheme }) {
           <div className="metrics-grid">
             <div className="metric-tile">
               <strong>Stored Reviews</strong>
-              <span className="metric-value">1,248</span>
+              <span className="metric-value">{reviews.length}</span>
             </div>
             <div className="metric-tile">
               <strong>System Status</strong>
@@ -76,82 +141,106 @@ function Dashboard({ theme, onToggleTheme }) {
             </div>
           </div>
         </section>
-        <section className="dashboard-hero">
-          <div>
-            <p className="dashboard-kicker">Control center</p>
-            <h1>Live webhook monitoring with a dedicated review history console.</h1>
-            <p>
-              The left side watches incoming pull request events in real time while the right side renders AI review
-              history in a scrollable monospaced pane tuned for dense markdown output.
-            </p>
-          </div>
-
-          <div className="dashboard-statbar">
-            <article>
-              <ShieldCheck size={18} />
-              <strong>Secure ingestion</strong>
-              <span>HMAC verified webhook entrypoint</span>
-            </article>
-            <article>
-              <Activity size={18} />
-              <strong>Realtime visibility</strong>
-              <span>Incoming PR events and responses</span>
-            </article>
-            <article>
-              <GitPullRequest size={18} />
-              <strong>Review depth</strong>
-              <span>Policy-aware AI code analysis</span>
-            </article>
-          </div>
-        </section>
 
         <section className="dashboard-split">
           <article className="dashboard-panel dashboard-panel--stream">
             <div className="dashboard-panel__header">
               <div>
-                <p className="dashboard-panel__kicker">Incoming PR webhooks</p>
-                <h2>Live monitor</h2>
+                <p className="dashboard-panel__kicker">Review logs</p>
+                <h2>History Feed</h2>
               </div>
-              <span>Streaming</span>
+              <span>{reviews.length} entries</span>
             </div>
 
             <div className="stream-list">
-              {webhookStream.map((item) => (
-                <div className="stream-item" key={item.title}>
-                  <div className="stream-item__icon">
-                    <GitPullRequest size={16} />
-                  </div>
-                  <div className="stream-item__body">
-                    <strong>{item.title}</strong>
-                    <span>{item.repo}</span>
-                    <p>{item.detail}</p>
-                  </div>
+              {isLoading ? (
+                <div className="dashboard-loading-state">
+                  <span>Loading review logs...</span>
                 </div>
-              ))}
+              ) : error ? (
+                <div className="dashboard-error-state">
+                  <span>{error}</span>
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="dashboard-empty-state">
+                  <span>No reviews recorded. Open or synchronize a pull request to trigger AI analysis.</span>
+                </div>
+              ) : (
+                reviews.map((review) => (
+                  <button
+                    type="button"
+                    key={review.id}
+                    className={`stream-item ${selectedReview && selectedReview.id === review.id ? 'stream-item--active' : ''}`}
+                    onClick={() => setSelectedReview(review)}
+                  >
+                    <div className="stream-item__icon">
+                      <GitPullRequest size={16} />
+                    </div>
+                    <div className="stream-item__body">
+                      <strong>{review.repo_full_name} · PR #{review.pr_number}</strong>
+                      <span>{review.pr_title || 'AI review completed.'}</span>
+                      <div className="stream-item__meta">
+                        <span className="stream-item__meta-item">
+                          <Calendar size={12} />
+                          {new Date(review.timestamp).toLocaleString()}
+                        </span>
+                        <span className="stream-item__meta-item">
+                          <Layers size={12} />
+                          {formatSize(review.cleaned_diff_size)}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </article>
 
           <article className="dashboard-panel dashboard-panel--history">
             <div className="dashboard-panel__header">
               <div>
-                <p className="dashboard-panel__kicker">AI review history</p>
-                <h2>Markdown console</h2>
+                <p className="dashboard-panel__kicker">Markdown console</p>
+                <h2>Review Content</h2>
               </div>
-              <span>Scrollable</span>
+              <span>Monospace</span>
             </div>
 
-            <div className="history-console">
-              <div className="history-console__meta">
-                <FileCode2 size={16} />
-                <span>Courier New rendering for review output</span>
+            {selectedReview ? (
+              <div className="history-console">
+                <div className="history-console__meta">
+                  <FileCode2 size={16} />
+                  <span>Courier New rendering for PR #{selectedReview.pr_number}</span>
+                </div>
+                <div className="history-console__body">
+                  <div className="review-meta-details">
+                    <div className="detail-field">
+                      <span className="detail-label">Repository</span>
+                      <span className="detail-value">{selectedReview.repo_full_name}</span>
+                    </div>
+                    <div className="detail-field">
+                      <span className="detail-label">Reviewer</span>
+                      <span className="detail-value">{selectedReview.reviewer}</span>
+                    </div>
+                    <div className="detail-field">
+                      <span className="detail-label">Cleaned Diff Size</span>
+                      <span className="detail-value">{formatSize(selectedReview.cleaned_diff_size)}</span>
+                    </div>
+                  </div>
+                  <pre className="monospace-markdown-surface">{selectedReview.llm_response}</pre>
+                </div>
               </div>
-              <div className="history-console__body">
-                <pre>{reviewHistory}</pre>
+            ) : (
+              <div className="history-console-empty">
+                <span>Select a review log to display details.</span>
               </div>
-            </div>
+            )}
           </article>
         </section>
       </main>
+
+      <footer className="corporate-footer">
+        Batch No. 15 | Zaalima Web Development Pvt. Ltd.
+      </footer>
     </div>
   );
 }

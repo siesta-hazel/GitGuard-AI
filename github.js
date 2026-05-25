@@ -65,6 +65,7 @@ async function analyzePullRequest(octokit, owner, repo, pull_number) {
         prTitle: `PR #${pull_number}`,
         reviewer: 'GitGuard AI',
         llmResponse,
+        cleanedDiffSize: cleanedDiff.length,
       });
     } catch (databaseError) {
       const timeoutMessage = databaseError?.code === 'SQLITE_BUSY' || databaseError?.code === 'SQLITE_TIMEOUT'

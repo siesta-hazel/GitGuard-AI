@@ -62,6 +62,35 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRouter);
 app.use('/webhook', createWebhookRouter({ octokit }));
 
+const jwt = require('jsonwebtoken');
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-local-jwt-secret');
+  jwt.verify(token, secret, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+app.get('/api/reviews', authenticateToken, async (req, res) => {
+  try {
+    const reviews = await listReviewHistory(100);
+    res.json(reviews);
+  } catch (error) {
+    console.error('Failed to fetch review history:', error);
+    res.status(500).json({ error: 'Failed to fetch review history' });
+  }
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
