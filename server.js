@@ -16,9 +16,8 @@ function validateEnv(required = []) {
   console.warn(message);
 }
 
-validateEnv(['GITHUB_WEBHOOK_SECRET', 'GITHUB_ACCESS_TOKEN', 'GROQ_API_KEY', 'JWT_SECRET']);
+validateEnv(['GITHUB_WEBHOOK_SECRET', 'GITHUB_APP_ID', 'GITHUB_PRIVATE_KEY', 'GROQ_API_KEY', 'JWT_SECRET']);
 const express = require('express');
-const { Octokit } = require('@octokit/rest');
 const authRouter = require('./routes/auth');
 const { createWebhookRouter } = require('./routes/webhook');
 const {
@@ -30,7 +29,6 @@ const {
 
 
 const app = express();
-const octokit = new Octokit({ auth: process.env.GITHUB_ACCESS_TOKEN });
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -60,7 +58,7 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', authRouter);
-app.use('/webhook', createWebhookRouter({ octokit }));
+app.use('/webhook', createWebhookRouter());
 
 const jwt = require('jsonwebtoken');
 function authenticateToken(req, res, next) {
@@ -83,7 +81,8 @@ function authenticateToken(req, res, next) {
 
 app.get('/api/reviews', authenticateToken, async (req, res) => {
   try {
-    const reviews = await listReviewHistory(100);
+    const userId = req.user?.sub ? parseInt(req.user.sub, 10) : null;
+    const reviews = await listReviewHistory(100, userId);
     res.json(reviews);
   } catch (error) {
     console.error('Failed to fetch review history:', error);
@@ -93,9 +92,10 @@ app.get('/api/reviews', authenticateToken, async (req, res) => {
 
 app.get('/api/dashboard-data', authenticateToken, async (req, res) => {
   try {
+    const userId = req.user?.sub ? parseInt(req.user.sub, 10) : null;
     const [repos, reviews] = await Promise.all([
-      listRepoSettings(),
-      listReviewHistory(100),
+      listRepoSettings(userId),
+      listReviewHistory(100, userId),
     ]);
     const metrics = {
       totalRepos: repos.length,
@@ -103,10 +103,34 @@ app.get('/api/dashboard-data', authenticateToken, async (req, res) => {
       strictRepos: repos.filter(repo => repo.strict_mode).length,
       recentReviews: reviews.length,
     };
-    res.json({ metrics, reviews });
+    res.json({ metrics, reviews, repos });
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard data' });
+  }
+});
+
+app.post('/api/repos/settings', authenticateToken, async (req, res) => {
+  try {
+    const { repo_full_name, strict_mode, ignore_linter, active } = req.body;
+    const userId = req.user?.sub ? parseInt(req.user.sub, 10) : null;
+    
+    if (!repo_full_name) {
+      return res.status(400).json({ error: 'Repository name is required' });
+    }
+
+    await upsertRepoSettings({
+      repoFullName: repo_full_name,
+      strictMode: !!strict_mode,
+      ignoreLinter: !!ignore_linter,
+      active: active !== false,
+      userId,
+    });
+
+    res.json({ message: 'Settings saved successfully' });
+  } catch (error) {
+    console.error('Failed to update repository settings:', error);
+    res.status(500).json({ error: 'Failed to update repository settings' });
   }
 });
 

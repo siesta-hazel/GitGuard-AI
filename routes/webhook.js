@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
-const { analyzePullRequest } = require('../github');
+const { enqueuePullRequest } = require('../github');
+const { getRepoSettings } = require('../data/store');
 
 function verifySignature(rawBody, signature) {
   if (!rawBody || !signature || typeof signature !== 'string') {
@@ -25,7 +26,7 @@ function verifySignature(rawBody, signature) {
   return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
 }
 
-function createWebhookRouter({ octokit }) {
+function createWebhookRouter() {
   const router = express.Router();
 
   router.post('/', async (req, res) => {
@@ -48,13 +49,39 @@ function createWebhookRouter({ octokit }) {
       const owner = payload.repository?.owner?.login;
       const repo = payload.repository?.name;
       const pullNumber = payload.pull_request?.number;
+      const installationId = payload.installation?.id;
 
       if (!owner || !repo || !pullNumber) {
         console.error('Webhook payload missing repository or pull request metadata');
         return res.status(400).send('Invalid pull request payload');
       }
 
-      void analyzePullRequest(octokit, owner, repo, pullNumber);
+      if (!installationId) {
+        console.error('Webhook payload missing installation context');
+        return res.status(400).send('Missing installation context');
+      }
+
+      const repoFullName = `${owner}/${repo}`;
+      try {
+        const settings = await getRepoSettings(repoFullName);
+        if (settings && !settings.active) {
+          console.log(`Skipping review for inactive repository: ${repoFullName}`);
+          return res.status(200).send('Repository is inactive');
+        }
+
+        // Queue the pull request analysis sequentially
+        enqueuePullRequest({
+          installationId,
+          owner,
+          repo,
+          pullNumber,
+        });
+
+        console.log(`Enqueued pull request analysis for ${repoFullName}#${pullNumber}`);
+      } catch (err) {
+        // Log errors but do not crash or return error to GitHub
+        console.error('Error handling webhook pull request event:', err.message || err);
+      }
     }
 
     return res.status(200).send('OK');

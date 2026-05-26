@@ -288,6 +288,19 @@ function AuthRouter({ theme, onToggleTheme }) {
           </form>
         </section>
       </div>
+      <footer className="corporate-footer" style={{
+        width: 'min(520px, calc(100% - 2rem))',
+        margin: '2rem auto 0',
+        textAlign: 'center',
+        padding: '1.5rem 0',
+        color: 'var(--muted-text)',
+        fontSize: '0.85rem',
+        borderTop: '1px solid var(--surface-border)',
+        position: 'relative',
+        zIndex: 2
+      }}>
+        Batch No. 15 | Zaalima Web Development Pvt. Ltd.
+      </footer>
     </div>
   );
 }
