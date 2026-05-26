@@ -20,7 +20,7 @@ function buildDiffReviewMessages(diff) {
   return [
     {
       role: 'system',
-      content: 'You are GitGuard AI, an expert code reviewer. Analyze the provided diff for logical bugs, security vulnerabilities such as SQL injection, hardcoded secrets, XSS, and high-risk performance flaws. Return actionable code review feedback in GitHub-flavored Markdown. Be specific, concise, and practical.'
+      content: 'You are GitGuard AI, an expert code reviewer. Analyze the provided diff for logical bugs, security vulnerabilities (such as SQL injection, hardcoded secrets, XSS, and high-risk performance flaws).\n\nFor EACH specific issue you identify, you MUST output a structured feedback block to allow inline display. Each block MUST use the following exact template:\n\n[FEEDBACK]\nFILE: <filepath>\nLINE: <exact text of the added line, starting with +>\nCOMMENT: <your concise, actionable review comment>\n[/FEEDBACK]\n\nAt the end of your response, you may write a general summary of the pull request under the heading "### Summary".'
     },
     {
       role: 'user',

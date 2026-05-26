@@ -1,5 +1,7 @@
+const { Octokit } = require('@octokit/rest');
+const { createAppAuth } = require('@octokit/auth-app');
 const { analyzeDiffWithLLM } = require('./llm');
-const { saveReviewHistory } = require('./data/store');
+const { saveReviewHistory, getRepoSettings } = require('./data/store');
 
 function cleanRawDiff(rawDiff) {
   return rawDiff
@@ -18,7 +20,77 @@ function cleanRawDiff(rawDiff) {
     .join('\n');
 }
 
-async function analyzePullRequest(octokit, owner, repo, pull_number) {
+function getInstallationOctokit(installationId) {
+  const appId = process.env.GITHUB_APP_ID;
+  let privateKey = process.env.GITHUB_PRIVATE_KEY;
+
+  if (!appId || !privateKey) {
+    throw new Error('Missing GITHUB_APP_ID or GITHUB_PRIVATE_KEY in environment variables');
+  }
+
+  // Handle base64 encoded private keys (common in cloud environments)
+  if (!privateKey.includes('-----BEGIN')) {
+    try {
+      privateKey = Buffer.from(privateKey, 'base64').toString('utf8');
+    } catch (e) {
+      // Ignore and use raw
+    }
+  }
+
+  return new Octokit({
+    authStrategy: createAppAuth,
+    auth: {
+      appId,
+      privateKey,
+      installationId,
+    },
+  });
+}
+
+// In-memory queue to process pull request analysis sequentially
+const prQueue = [];
+let isProcessingQueue = false;
+
+function enqueuePullRequest(task) {
+  prQueue.push(task);
+  triggerQueueProcessing();
+}
+
+function triggerQueueProcessing() {
+  if (isProcessingQueue || prQueue.length === 0) {
+    return;
+  }
+
+  isProcessingQueue = true;
+
+  setTimeout(async () => {
+    const task = prQueue.shift();
+    if (task) {
+      const { installationId, owner, repo, pullNumber } = task;
+      const repoFullName = `${owner}/${repo}`;
+      console.log(`Processing queued PR review for: ${repoFullName}#${pullNumber}`);
+
+      try {
+        // Fetch setting to get active status and user_id association
+        const settings = await getRepoSettings(repoFullName);
+        if (settings && !settings.active) {
+          console.log(`Skipping analysis for inactive repository: ${repoFullName}`);
+        } else {
+          const userId = settings ? settings.user_id : null;
+          const octokit = getInstallationOctokit(installationId);
+          await analyzePullRequest(octokit, owner, repo, pullNumber, userId);
+        }
+      } catch (err) {
+        console.error(`Failed to process queued pull request ${repoFullName}#${pullNumber}:`, err.message || err);
+      }
+    }
+
+    isProcessingQueue = false;
+    triggerQueueProcessing();
+  }, 0);
+}
+
+async function analyzePullRequest(octokit, owner, repo, pull_number, userId = null) {
   const repoName = `${owner}/${repo}`;
 
   try {
@@ -44,6 +116,7 @@ async function analyzePullRequest(octokit, owner, repo, pull_number) {
     const llmResponse = await analyzeDiffWithLLM(cleanedDiff);
     console.log('LLM review generated for', repoName, `PR #${pull_number}`);
 
+    // Try posting the comment, handle failure gracefully without blocking
     try {
       await octokit.issues.createComment({
         owner,
@@ -58,6 +131,7 @@ async function analyzePullRequest(octokit, owner, repo, pull_number) {
       console.error(`${permissionMessage} while posting review for ${repoName}#${pull_number}:`, commentError.message || commentError);
     }
 
+    // Try saving history, handle failure gracefully without blocking
     try {
       await saveReviewHistory({
         repoFullName: repoName,
@@ -66,6 +140,8 @@ async function analyzePullRequest(octokit, owner, repo, pull_number) {
         reviewer: 'GitGuard AI',
         llmResponse,
         cleanedDiffSize: cleanedDiff.length,
+        rawDiff,
+        userId,
       });
     } catch (databaseError) {
       const timeoutMessage = databaseError?.code === 'SQLITE_BUSY' || databaseError?.code === 'SQLITE_TIMEOUT'
@@ -81,4 +157,9 @@ async function analyzePullRequest(octokit, owner, repo, pull_number) {
   }
 }
 
-module.exports = { analyzePullRequest, cleanRawDiff };
+module.exports = {
+  analyzePullRequest,
+  cleanRawDiff,
+  getInstallationOctokit,
+  enqueuePullRequest,
+};
