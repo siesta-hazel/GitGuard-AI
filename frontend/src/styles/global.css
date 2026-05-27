@@ -10,7 +10,7 @@
   --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --app-bg: #000000;
   --app-fg: #ffffff;
-  --surface: rgba(36, 41, 46, 0.42);
+  --surface: rgba(36, 41, 46, 0.4);
   --surface-strong: rgba(0, 0, 0, 0.3);
   --surface-border: rgba(242, 245, 243, 0.12);
   --muted-text: rgba(242, 245, 243, 0.74);

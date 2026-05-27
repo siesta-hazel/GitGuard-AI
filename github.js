@@ -21,11 +21,18 @@ function cleanRawDiff(rawDiff) {
 }
 
 function getInstallationOctokit(installationId) {
+  const token = process.env.GITHUB_ACCESS_TOKEN;
+  if (token) {
+    return new Octokit({
+      auth: token,
+    });
+  }
+
   const appId = process.env.GITHUB_APP_ID;
   let privateKey = process.env.GITHUB_PRIVATE_KEY;
 
   if (!appId || !privateKey) {
-    throw new Error('Missing GITHUB_APP_ID or GITHUB_PRIVATE_KEY in environment variables');
+    throw new Error('Missing GITHUB_ACCESS_TOKEN or GITHUB_APP_ID/GITHUB_PRIVATE_KEY in environment variables');
   }
 
   // Handle base64 encoded private keys (common in cloud environments)
@@ -33,7 +40,7 @@ function getInstallationOctokit(installationId) {
     try {
       privateKey = Buffer.from(privateKey, 'base64').toString('utf8');
     } catch (e) {
-      // Ignore and use raw
+      // Ignore conversion if it is already raw
     }
   }
 
@@ -66,19 +73,20 @@ function triggerQueueProcessing() {
   setTimeout(async () => {
     const task = prQueue.shift();
     if (task) {
-      const { installationId, owner, repo, pullNumber } = task;
+      const { installationId, owner, repo, pullNumber, userId } = task;
       const repoFullName = `${owner}/${repo}`;
       console.log(`Processing queued PR review for: ${repoFullName}#${pullNumber}`);
 
       try {
-        // Fetch setting to get active status and user_id association
         const settings = await getRepoSettings(repoFullName);
-        if (settings && !settings.active) {
+        if (!settings) {
+          console.log(`Skipping analysis for unregistered repository: ${repoFullName}`);
+        } else if (!settings.active) {
           console.log(`Skipping analysis for inactive repository: ${repoFullName}`);
         } else {
-          const userId = settings ? settings.user_id : null;
+          const finalUserId = settings.user_id || userId;
           const octokit = getInstallationOctokit(installationId);
-          await analyzePullRequest(octokit, owner, repo, pullNumber, userId);
+          await analyzePullRequest(octokit, owner, repo, pullNumber, finalUserId);
         }
       } catch (err) {
         console.error(`Failed to process queued pull request ${repoFullName}#${pullNumber}:`, err.message || err);
@@ -87,7 +95,7 @@ function triggerQueueProcessing() {
 
     isProcessingQueue = false;
     triggerQueueProcessing();
-  }, 0);
+  }, 1000); // 1-second delay between sequential reviews to prevent hitting API secondary limits
 }
 
 async function analyzePullRequest(octokit, owner, repo, pull_number, userId = null) {
@@ -114,7 +122,7 @@ async function analyzePullRequest(octokit, owner, repo, pull_number, userId = nu
     console.log(`Cleaned diff size: ${cleanedDiff.length} characters`);
 
     const llmResponse = await analyzeDiffWithLLM(cleanedDiff);
-    console.log('LLM review generated for', repoName, `PR #${pull_number}`);
+    console.log(`LLM review generated for ${repoName} PR #${pull_number}`);
 
     // Try posting the comment, handle failure gracefully without blocking
     try {

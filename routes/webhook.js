@@ -56,15 +56,21 @@ function createWebhookRouter() {
         return res.status(400).send('Invalid pull request payload');
       }
 
-      if (!installationId) {
-        console.error('Webhook payload missing installation context');
+      const hasAppAuth = !!(process.env.GITHUB_APP_ID && process.env.GITHUB_PRIVATE_KEY);
+      if (!installationId && hasAppAuth) {
+        console.error('Webhook payload missing installation context for GitHub App');
         return res.status(400).send('Missing installation context');
       }
 
       const repoFullName = `${owner}/${repo}`;
       try {
         const settings = await getRepoSettings(repoFullName);
-        if (settings && !settings.active) {
+        if (!settings) {
+          console.log(`Skipping review for unregistered repository: ${repoFullName}`);
+          return res.status(200).send('Repository is not registered');
+        }
+
+        if (!settings.active) {
           console.log(`Skipping review for inactive repository: ${repoFullName}`);
           return res.status(200).send('Repository is inactive');
         }
@@ -75,11 +81,11 @@ function createWebhookRouter() {
           owner,
           repo,
           pullNumber,
+          userId: settings.user_id,
         });
 
         console.log(`Enqueued pull request analysis for ${repoFullName}#${pullNumber}`);
       } catch (err) {
-        // Log errors but do not crash or return error to GitHub
         console.error('Error handling webhook pull request event:', err.message || err);
       }
     }
