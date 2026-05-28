@@ -57,6 +57,28 @@ function getInstallationOctokit(installationId) {
 // In-memory queue to process pull request analysis sequentially
 const prQueue = [];
 let isProcessingQueue = false;
+let isQueuePaused = false;
+
+function pauseQueue() {
+  isQueuePaused = true;
+  console.log('Webhook processing queue has been paused.');
+}
+
+function waitForActiveAnalyses() {
+  return new Promise((resolve) => {
+    if (!isProcessingQueue) {
+      resolve();
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if (!isProcessingQueue) {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 100);
+  });
+}
 
 function enqueuePullRequest(task) {
   prQueue.push(task);
@@ -64,13 +86,18 @@ function enqueuePullRequest(task) {
 }
 
 function triggerQueueProcessing() {
-  if (isProcessingQueue || prQueue.length === 0) {
+  if (isQueuePaused || isProcessingQueue || prQueue.length === 0) {
     return;
   }
 
   isProcessingQueue = true;
 
   setTimeout(async () => {
+    if (isQueuePaused) {
+      isProcessingQueue = false;
+      return;
+    }
+
     const task = prQueue.shift();
     if (task) {
       const { installationId, owner, repo, pullNumber, userId } = task;
@@ -121,8 +148,29 @@ async function analyzePullRequest(octokit, owner, repo, pull_number, userId = nu
     const cleanedDiff = cleanRawDiff(rawDiff);
     console.log(`Cleaned diff size: ${cleanedDiff.length} characters`);
 
-    const llmResponse = await analyzeDiffWithLLM(cleanedDiff);
-    console.log(`LLM review generated for ${repoName} PR #${pull_number}`);
+    let llmResponse;
+    try {
+      llmResponse = await analyzeDiffWithLLM(cleanedDiff);
+      console.log(`LLM review generated for ${repoName} PR #${pull_number}`);
+    } catch (llmError) {
+      console.error(`LLM analysis failed for ${repoName} PR #${pull_number}:`, llmError.message || llmError);
+      try {
+        await saveReviewHistory({
+          repoFullName: repoName,
+          prNumber: pull_number,
+          prTitle: `PR #${pull_number}`,
+          reviewer: 'GitGuard AI',
+          llmResponse: `Error: AI analysis failed: ${llmError.message || llmError}`,
+          cleanedDiffSize: cleanedDiff.length,
+          rawDiff,
+          userId,
+          status: 'Failed',
+        });
+      } catch (databaseError) {
+        console.error(`Database write failure while saving failed review for ${repoName}#${pull_number}:`, databaseError.message || databaseError);
+      }
+      return null;
+    }
 
     // Try posting the comment, handle failure gracefully without blocking
     try {
@@ -150,6 +198,7 @@ async function analyzePullRequest(octokit, owner, repo, pull_number, userId = nu
         cleanedDiffSize: cleanedDiff.length,
         rawDiff,
         userId,
+        status: 'Completed',
       });
     } catch (databaseError) {
       const timeoutMessage = databaseError?.code === 'SQLITE_BUSY' || databaseError?.code === 'SQLITE_TIMEOUT'
@@ -170,4 +219,6 @@ module.exports = {
   cleanRawDiff,
   getInstallationOctokit,
   enqueuePullRequest,
+  pauseQueue,
+  waitForActiveAnalyses,
 };
