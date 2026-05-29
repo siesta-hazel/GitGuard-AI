@@ -1,6 +1,8 @@
 .dashboard-page {
   position: relative;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: var(--app-bg);
   color: var(--app-fg);
@@ -516,4 +518,119 @@ button.stream-item:hover {
   .stream-item {
     grid-template-columns: 1fr;
   }
+}
+
+/* Dynamic Webhook Processing Loading Mask */
+.processing-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.processing-loading-overlay__content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.processing-loading-overlay__content p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--app-fg);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.spinning-loader {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Polished Empty State Styling */
+.dashboard-empty-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 3.5rem 2rem !important;
+  background: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(242, 245, 243, 0.1) !important;
+  border-radius: 24px !important;
+  text-align: center !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dashboard-empty-state__icon-wrap {
+  background: rgba(242, 245, 243, 0.9);
+  border-radius: 50%;
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.dashboard-empty-state__title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--app-fg);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-empty-state__subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: #F2F5F3;
+  margin: 0;
+  opacity: 0.85;
+}
+
+/* Typography Hardening */
+h1, h2, h3, h4, h5, h6,
+.dashboard-nav,
+.landing-nav,
+.metric-tile,
+.metric-tile__header strong,
+.metric-value,
+.metric-desc,
+.dashboard-kicker,
+.dashboard-panel__kicker {
+  font-family: 'Inter', sans-serif !important;
+}
+
+.stream-list,
+.stream-item,
+.monospace-markdown-surface,
+.code-diff,
+.history-console pre,
+.history-console-empty {
+  font-family: 'Courier New', Courier, monospace !important;
+}
+
+/* Sticky Footer Configuration */
+.corporate-footer {
+  margin-top: auto !important;
 }
