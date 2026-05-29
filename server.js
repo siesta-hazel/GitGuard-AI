@@ -85,9 +85,43 @@ app.listen(PORT, () => {
 
 // Dashboard home – list all repos with settings
 app.get('/dashboard', (req, res) => {
+  // Get all repos with settings
   db.all('SELECT * FROM repo_settings ORDER BY repo_full_name', (err, repos) => {
     if (err) return res.status(500).send('Database error');
-    res.render('dashboard', { repos });
+    
+    // Get stats: total repos, total reviews, total issues (approx from llm_response)
+    db.get(`SELECT 
+              (SELECT COUNT(*) FROM repo_settings) as total_repos,
+              (SELECT COUNT(*) FROM review_history) as total_reviews`,
+      (statsErr, stats) => {
+        if (statsErr) return res.status(500).send('Database error');
+        
+        // For each repo, get last review date
+        const repoPromises = repos.map(repo => {
+          return new Promise((resolve) => {
+            db.get(
+              `SELECT timestamp FROM review_history 
+               WHERE repo_full_name = ? 
+               ORDER BY timestamp DESC LIMIT 1`,
+              [repo.repo_full_name],
+              (err, row) => {
+                resolve({
+                  ...repo,
+                  last_reviewed: row ? row.timestamp : null
+                });
+              }
+            );
+          });
+        });
+        
+        Promise.all(repoPromises).then(reposWithLastReview => {
+          res.render('dashboard', {
+            repos: reposWithLastReview,
+            stats: stats || { total_repos: 0, total_reviews: 0 }
+          });
+        });
+      }
+    );
   });
 });
 
