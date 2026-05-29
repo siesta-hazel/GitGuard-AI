@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   FileCode2, GitPullRequest, Github, Moon, Sun, LogOut, 
   Calendar, Layers, Shield, ToggleLeft, Activity, 
-  Plus, ShieldCheck 
+  Plus, ShieldCheck, Loader2
 } from 'lucide-react';
 import '../styles/dashboard.css';
 
@@ -185,6 +185,7 @@ function Dashboard({ theme, onToggleTheme }) {
   const [selectedReview, setSelectedReview] = useState(null);
   const [activeTab, setActiveTab] = useState('summary');
   const [selectedDiffFile, setSelectedDiffFile] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [newRepoName, setNewRepoName] = useState('');
   const [isAddingRepo, setIsAddingRepo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -205,8 +206,15 @@ function Dashboard({ theme, onToggleTheme }) {
             strictRepos: 0,
             recentReviews: 0,
           });
+          setIsProcessing(!!data.isProcessing);
           if (data.reviews && data.reviews.length > 0) {
-            setSelectedReview(data.reviews[0]);
+            setSelectedReview(prevSelected => {
+              if (prevSelected) {
+                const updated = data.reviews.find(r => r.id === prevSelected.id);
+                return updated || data.reviews[0];
+              }
+              return data.reviews[0];
+            });
           }
           setIsLoading(false);
         }
@@ -223,8 +231,36 @@ function Dashboard({ theme, onToggleTheme }) {
     };
 
     loadData();
+
+    const interval = setInterval(async () => {
+      try {
+        const data = await fetchDashboardDataWithFallback();
+        if (active) {
+          setReviews(data.reviews || []);
+          setRepos(data.repos || []);
+          setMetrics(data.metrics || {
+            totalRepos: 0,
+            activeRepos: 0,
+            strictRepos: 0,
+            recentReviews: 0,
+          });
+          setIsProcessing(!!data.isProcessing);
+          setSelectedReview(prevSelected => {
+            if (prevSelected) {
+              const updated = data.reviews.find(r => r.id === prevSelected.id);
+              return updated || prevSelected;
+            }
+            return data.reviews && data.reviews.length > 0 ? data.reviews[0] : null;
+          });
+        }
+      } catch (err) {
+        console.error('Polling failed:', err);
+      }
+    }, 4000);
+
     return () => {
       active = false;
+      clearInterval(interval);
     };
   }, [navigate]);
 
@@ -335,6 +371,14 @@ function Dashboard({ theme, onToggleTheme }) {
 
   return (
     <div className="dashboard-page">
+      {isProcessing && (
+        <div className="processing-loading-overlay">
+          <div className="processing-loading-overlay__content">
+            <Loader2 size={36} color="#0FBF3E" className="spinning-loader" />
+            <p>Analyzing Pull Request Diff via GitGuard AI</p>
+          </div>
+        </div>
+      )}
       <div className="dashboard-glow dashboard-glow--one" aria-hidden="true" />
       <div className="dashboard-glow dashboard-glow--two" aria-hidden="true" />
 
@@ -535,7 +579,11 @@ function Dashboard({ theme, onToggleTheme }) {
                 </div>
               ) : reviews.length === 0 ? (
                 <div className="dashboard-empty-state">
-                  <span>No reviews recorded. Open or synchronize a pull request to trigger AI analysis.</span>
+                  <div className="dashboard-empty-state__icon-wrap">
+                    <ShieldCheck size={48} color="#24292E" />
+                  </div>
+                  <h3 className="dashboard-empty-state__title">System Active</h3>
+                  <p className="dashboard-empty-state__subtitle">Awaiting incoming pull request triggers</p>
                 </div>
               ) : (
                 reviews.map((review) => (

@@ -5,6 +5,7 @@ const {
   listReviewHistory,
   upsertRepoSettings,
 } = require('../data/store');
+const { isQueueProcessing } = require('../github');
 
 const router = express.Router();
 
@@ -42,7 +43,9 @@ router.get('/dashboard-data', authenticateToken, async (req, res) => {
       recentReviews: reviews.length,
     };
 
-    return res.json({ metrics, reviews, repos });
+    const isProcessing = isQueueProcessing();
+
+    return res.json({ metrics, reviews, repos, isProcessing });
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error.message);
     return res.status(500).json({ error: 'Failed to retrieve dashboard metrics' });

@@ -214,6 +214,10 @@ async function analyzePullRequest(octokit, owner, repo, pull_number, userId = nu
   }
 }
 
+function isQueueProcessing() {
+  return isProcessingQueue || prQueue.length > 0;
+}
+
 module.exports = {
   analyzePullRequest,
   cleanRawDiff,
@@ -221,4 +225,5 @@ module.exports = {
   enqueuePullRequest,
   pauseQueue,
   waitForActiveAnalyses,
+  isQueueProcessing,
 };
