@@ -89,6 +89,15 @@ app.get('*', (req, res, next) => {
   });
 });
 
+// General Express error-handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled server error:', err.message || err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
 const PORT = Number(process.env.PORT || 3000);
 
 let runningServer = null;
@@ -159,3 +168,11 @@ async function gracefulShutdown(signal) {
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception thrown:', error);
+});

@@ -1,4 +1,5 @@
 const Groq = require('groq-sdk');
+const { withRetry } = require('./retry');
 
 let groqClient;
 
@@ -33,12 +34,12 @@ async function analyzeDiffWithLLM(diff) {
   try {
     const groq = getGroqClient();
 
-    const completion = await groq.chat.completions.create({
+    const completion = await withRetry(() => groq.chat.completions.create({
       messages: buildDiffReviewMessages(diff),
       model: 'llama-3.3-70b-versatile',
       temperature: 0.3,
       max_tokens: 1500,
-    });
+    }));
     return completion.choices[0]?.message?.content || 'No response was returned from Groq.';
   } catch (error) {
     console.error('Groq error:', error);

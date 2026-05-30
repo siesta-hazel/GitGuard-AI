@@ -439,462 +439,550 @@ function Dashboard({ theme, onToggleTheme }) {
           </div>
         </section>
 
-        {/* Repository Management Panel */}
-        <section className="dashboard-hero" style={{ padding: '1.5rem', borderRadius: '24px' }}>
-          <div className="repo-management-container" style={{ width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <p className="dashboard-kicker" style={{ margin: 0 }}>Codebase Controls</p>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0.2rem 0 0' }}>Repository Configurations</h2>
-              </div>
-              <form onSubmit={handleAddRepo} style={{ display: 'flex', gap: '0.5rem', minWidth: '280px' }}>
-                <input
-                  type="text"
-                  placeholder="owner/repository"
-                  value={newRepoName}
-                  onChange={(e) => setNewRepoName(e.target.value)}
-                  disabled={isAddingRepo}
-                  style={{
-                    flex: 1,
-                    padding: '0.6rem 0.9rem',
-                    borderRadius: '12px',
-                    border: '1px solid var(--surface-border)',
-                    background: 'var(--surface-strong)',
-                    color: 'var(--app-fg)',
-                    fontSize: '0.9rem',
-                    outline: 'none'
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={isAddingRepo}
-                  style={{
-                    padding: '0.6rem 1rem',
-                    borderRadius: '12px',
-                    background: 'var(--github-green)',
-                    color: '#000000',
-                    fontWeight: 700,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  <Plus size={16} />
-                  <span>Add</span>
-                </button>
-              </form>
-            </div>
-
-            {repos.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem', border: '1px dashed var(--surface-border)', borderRadius: '16px', color: 'var(--muted-text)' }}>
-                No repositories configured. Use the field above to add your first repository.
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
-                {repos.map((repo) => (
-                  <div key={repo.repo_full_name} style={{
-                    padding: '1.2rem',
-                    borderRadius: '16px',
-                    background: 'var(--surface-strong)',
-                    border: '1px solid var(--surface-border)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: '1rem'
-                  }}>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                        <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--app-fg)', wordBreak: 'break-all' }}>{repo.repo_full_name}</span>
-                        <span style={{
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '8px',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          background: repo.active ? 'rgba(15, 191, 62, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                          color: repo.active ? 'var(--github-green)' : '#ef4444'
-                        }}>
-                          {repo.active ? 'Active' : 'Paused'}
-                        </span>
-                      </div>
-                      <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: 'var(--muted-text)' }}>
-                        Configure custom operational policies.
-                      </p>
-                    </div>
-
-                    <div style={{ display: 'grid', gap: '0.6rem', borderTop: '1px solid var(--surface-border)', paddingTop: '0.8rem' }}>
-                      <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
-                        <span style={{ color: 'var(--muted-text)' }}>Active (Webhook Ingestion)</span>
-                        <input
-                          type="checkbox"
-                          checked={!!repo.active}
-                          onChange={(e) => handleToggleSetting(repo.repo_full_name, 'active', e.target.checked)}
-                          style={{ accentColor: 'var(--github-green)', width: '16px', height: '16px' }}
-                        />
-                      </label>
-                      <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
-                        <span style={{ color: 'var(--muted-text)' }}>Strict review checks</span>
-                        <input
-                          type="checkbox"
-                          checked={!!repo.strict_mode}
-                          onChange={(e) => handleToggleSetting(repo.repo_full_name, 'strict_mode', e.target.checked)}
-                          style={{ accentColor: 'var(--github-green)', width: '16px', height: '16px' }}
-                        />
-                      </label>
-                      <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
-                        <span style={{ color: 'var(--muted-text)' }}>Ignore linter errors</span>
-                        <input
-                          type="checkbox"
-                          checked={!!repo.ignore_linter}
-                          onChange={(e) => handleToggleSetting(repo.repo_full_name, 'ignore_linter', e.target.checked)}
-                          style={{ accentColor: 'var(--github-green)', width: '16px', height: '16px' }}
-                        />
-                      </label>
-                    </div>
+        {/* Two-column layout grid */}
+        <div className="dashboard-grid-layout">
+          {/* Left Control Grid */}
+          <div className="left-control-grid">
+            {/* Repository Configurations */}
+            <section className="dashboard-panel" style={{ padding: '1.5rem', borderRadius: '24px' }}>
+              <div className="repo-management-container" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <p className="dashboard-kicker" style={{ margin: 0 }}>Codebase Controls</p>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0.2rem 0 0' }}>Repository Configurations</h2>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="dashboard-split">
-          <article className="dashboard-panel dashboard-panel--stream">
-            <div className="dashboard-panel__header">
-              <div>
-                <p className="dashboard-panel__kicker">Review logs</p>
-                <h2>History Feed</h2>
-              </div>
-              <span>{reviews.length} entries</span>
-            </div>
-
-            <div className="stream-list">
-              {isLoading ? (
-                <div className="dashboard-loading-state">
-                  <span>Loading review logs...</span>
-                </div>
-              ) : error ? (
-                <div className="dashboard-error-state">
-                  <span>{error}</span>
-                </div>
-              ) : reviews.length === 0 ? (
-                <div className="dashboard-empty-state">
-                  <div className="dashboard-empty-state__icon-wrap">
-                    <ShieldCheck size={48} color="#24292E" />
-                  </div>
-                  <h3 className="dashboard-empty-state__title">System Active</h3>
-                  <p className="dashboard-empty-state__subtitle">Awaiting incoming pull request triggers</p>
-                </div>
-              ) : (
-                reviews.map((review) => (
-                  <button
-                    type="button"
-                    key={review.id}
-                    className={`stream-item ${selectedReview && selectedReview.id === review.id ? 'stream-item--active' : ''}`}
-                    onClick={() => {
-                      setSelectedReview(review);
-                      setActiveTab('summary');
-                    }}
-                  >
-                    <div className="stream-item__icon">
-                      <GitPullRequest size={16} />
-                    </div>
-                    <div className="stream-item__body">
-                      <strong>{review.repo_full_name} · PR #{review.pr_number}</strong>
-                      <span>{review.pr_title || 'AI review completed.'}</span>
-                      <div className="stream-item__meta">
-                        <span className="stream-item__meta-item">
-                          <Calendar size={12} />
-                          {new Date(review.timestamp).toLocaleString()}
-                        </span>
-                        <span className="stream-item__meta-item">
-                          <Layers size={12} />
-                          {formatSize(review.cleaned_diff_size)}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </article>
-
-          <article className="dashboard-panel dashboard-panel--history">
-            <div className="dashboard-panel__header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.8rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <p className="dashboard-panel__kicker">Operational console</p>
-                  <h2>Review Details</h2>
-                </div>
-                {selectedReview && (
-                  <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--surface-strong)', padding: '0.2rem', borderRadius: '10px', border: '1px solid var(--surface-border)' }}>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('summary')}
+                  <form onSubmit={handleAddRepo} style={{ display: 'flex', gap: '0.5rem', minWidth: '280px', flexWrap: 'wrap' }}>
+                    <input
+                      type="text"
+                      placeholder="owner/repository"
+                      value={newRepoName}
+                      onChange={(e) => setNewRepoName(e.target.value)}
+                      disabled={isAddingRepo}
                       style={{
-                        padding: '0.4rem 0.8rem',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                        borderRadius: '8px',
-                        background: activeTab === 'summary' ? 'rgba(15, 191, 62, 0.15)' : 'transparent',
-                        color: activeTab === 'summary' ? 'var(--github-green)' : 'var(--muted-text)',
-                        transition: 'all 0.2s'
+                        flex: '1 1 180px',
+                        padding: '0.6rem 0.9rem',
+                        borderRadius: '12px',
+                        border: '1px solid var(--surface-border)',
+                        background: 'var(--surface-strong)',
+                        color: 'var(--app-fg)',
+                        fontSize: '0.9rem',
+                        outline: 'none'
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={isAddingRepo}
+                      style={{
+                        padding: '0.6rem 1rem',
+                        borderRadius: '12px',
+                        background: 'var(--github-green)',
+                        color: '#000000',
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        fontSize: '0.9rem'
                       }}
                     >
-                      Summary
+                      <Plus size={16} />
+                      <span>Add</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('diff')}
-                      style={{
-                        padding: '0.4rem 0.8rem',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                        borderRadius: '8px',
-                        background: activeTab === 'diff' ? 'rgba(15, 191, 62, 0.15)' : 'transparent',
-                        color: activeTab === 'diff' ? 'var(--github-green)' : 'var(--muted-text)',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      Interactive Diff
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {selectedReview && (
-                <div className="review-meta-details" style={{ margin: 0, padding: '0.8rem', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.5rem', borderRadius: '12px' }}>
-                  <div className="detail-field">
-                    <span className="detail-label">Repository</span>
-                    <span className="detail-value" style={{ fontSize: '0.8rem' }}>{selectedReview.repo_full_name}</span>
-                  </div>
-                  <div className="detail-field">
-                    <span className="detail-label">PR</span>
-                    <span className="detail-value" style={{ fontSize: '0.8rem' }}>#{selectedReview.pr_number}</span>
-                  </div>
-                  <div className="detail-field">
-                    <span className="detail-label">Diff Size</span>
-                    <span className="detail-value" style={{ fontSize: '0.8rem' }}>{formatSize(selectedReview.cleaned_diff_size)}</span>
-                  </div>
+                  </form>
                 </div>
-              )}
-            </div>
 
-            {selectedReview ? (
-              <div className="history-console" style={{ height: '100%', minHeight: '38rem', display: 'flex', flexDirection: 'column' }}>
-                {activeTab === 'summary' ? (
-                  <div style={{ flex: 1, overflowY: 'auto' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--muted-text)', marginBottom: '0.8rem', fontSize: '0.85rem' }}>
-                      <FileCode2 size={16} />
-                      <span>AI Review Summary</span>
-                    </div>
-                    <pre className="monospace-markdown-surface" style={{ maxHeight: 'none', overflowY: 'visible' }}>{parsedSummary || 'No summary text available.'}</pre>
+                {repos.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '1.5rem', border: '1px dashed var(--surface-border)', borderRadius: '16px', color: 'var(--muted-text)' }}>
+                    No repositories configured. Use the field above to add your first repository.
                   </div>
                 ) : (
-                  <div style={{
-                    display: 'flex',
-                    height: '100%',
-                    flex: 1,
-                    border: '1px solid var(--surface-border)',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    background: 'var(--surface-strong)'
-                  }}>
-                    {/* Left Pane: Files List */}
-                    <div style={{
-                      width: '200px',
-                      flexShrink: 0,
-                      borderRight: '1px solid var(--surface-border)',
-                      overflowY: 'auto',
-                      padding: '0.8rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.4rem',
-                      background: 'rgba(0, 0, 0, 0.2)'
-                    }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
-                        Files Changed
-                      </div>
-                      {diffFiles.length === 0 ? (
-                        <span style={{ fontSize: '0.8rem', color: 'var(--muted-text)', padding: '0.5rem 0' }}>No diff data</span>
-                      ) : (
-                        diffFiles.map(file => {
-                          const fileCommentCount = inlineFeedbacks.filter(fb => {
-                            const fbFile = fb.file.toLowerCase();
-                            const targetFile = file.name.toLowerCase();
-                            return targetFile.endsWith(fbFile) || fbFile.endsWith(targetFile);
-                          }).length;
-
-                          return (
-                            <button
-                              type="button"
-                              key={file.name}
-                              onClick={() => setSelectedDiffFile(file)}
-                              style={{
-                                width: '100%',
-                                padding: '0.5rem 0.6rem',
-                                borderRadius: '8px',
-                                textAlign: 'left',
-                                fontSize: '0.8rem',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                background: selectedDiffFile?.name === file.name ? 'rgba(15, 191, 62, 0.12)' : 'transparent',
-                                color: selectedDiffFile?.name === file.name ? 'var(--github-green)' : 'var(--app-fg)',
-                                border: '1px solid ' + (selectedDiffFile?.name === file.name ? 'rgba(15, 191, 62, 0.25)' : 'transparent'),
-                                outline: 'none'
-                              }}
-                            >
-                              <span style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                flex: 1,
-                                fontFamily: 'Courier New',
-                                fontWeight: selectedDiffFile?.name === file.name ? 700 : 400
-                              }}>
-                                {file.name.split('/').pop()}
-                              </span>
-                              {fileCommentCount > 0 && (
-                                <span style={{
-                                  background: 'var(--github-green)',
-                                  color: '#000000',
-                                  fontSize: '0.7rem',
-                                  fontWeight: 800,
-                                  borderRadius: '999px',
-                                  padding: '0.05rem 0.35rem',
-                                  minWidth: '16px',
-                                  textAlign: 'center'
-                                }}>
-                                  {fileCommentCount}
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-
-                    {/* Right Pane: Diff View */}
-                    <div style={{
-                      flex: 1,
-                      overflowY: 'auto',
-                      overflowX: 'auto',
-                      padding: '0.8rem',
-                      fontFamily: "'Courier New', Courier, monospace",
-                      fontSize: '0.85rem',
-                      background: 'rgba(0, 0, 0, 0.1)'
-                    }}>
-                      {selectedDiffFile ? (
-                        <div style={{ display: 'grid', gap: '1px' }}>
-                          <div style={{ padding: '0.3rem 0.5rem', borderBottom: '1px solid var(--surface-border)', color: 'var(--muted-text)', fontSize: '0.75rem', marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                            <FileCode2 size={14} />
-                            <span>{selectedDiffFile.name}</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+                    {repos.map((repo) => (
+                      <div key={repo.repo_full_name} style={{
+                        padding: '1.2rem',
+                        borderRadius: '16px',
+                        background: 'var(--surface-strong)',
+                        border: '1px solid var(--surface-border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '1rem'
+                      }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--app-fg)', wordBreak: 'break-all' }}>{repo.repo_full_name}</span>
+                            <span style={{
+                              padding: '0.2rem 0.5rem',
+                              borderRadius: '8px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              background: repo.active ? 'rgba(15, 191, 62, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                              color: repo.active ? 'var(--github-green)' : '#ef4444'
+                            }}>
+                              {repo.active ? 'Active' : 'Paused'}
+                            </span>
                           </div>
-                          {selectedDiffFile.lines.map((line) => {
-                            let lineBg = 'transparent';
-                            let textColor = 'var(--app-fg)';
-
-                            if (line.type === 'addition') {
-                              lineBg = 'rgba(15, 191, 62, 0.12)';
-                              textColor = 'var(--github-green)';
-                            } else if (line.type === 'deletion') {
-                              lineBg = 'rgba(239, 68, 68, 0.12)';
-                              textColor = '#ef4444';
-                            } else if (line.type === 'hunk-header') {
-                              lineBg = 'rgba(36, 41, 46, 0.4)';
-                              textColor = 'var(--muted-text)';
-                            }
-
-                            const fb = findFeedbackForLine(selectedDiffFile.name, line.text, inlineFeedbacks);
-
-                            return (
-                              <div key={line.id} style={{ display: 'grid', gap: '2px' }}>
-                                <div style={{
-                                  display: 'flex',
-                                  background: lineBg,
-                                  color: textColor,
-                                  minHeight: '20px',
-                                  paddingRight: '0.5rem',
-                                  borderRadius: '4px'
-                                }}>
-                                  <div style={{
-                                    width: '35px',
-                                    textAlign: 'right',
-                                    paddingRight: '0.4rem',
-                                    color: 'var(--muted-text)',
-                                    opacity: 0.5,
-                                    userSelect: 'none',
-                                    borderRight: '1px solid var(--surface-border)',
-                                    fontSize: '0.75rem'
-                                  }}>
-                                    {line.lineNumOld || ''}
-                                  </div>
-                                  <div style={{
-                                    width: '35px',
-                                    textAlign: 'right',
-                                    paddingRight: '0.4rem',
-                                    color: 'var(--muted-text)',
-                                    opacity: 0.5,
-                                    userSelect: 'none',
-                                    borderRight: '1px solid var(--surface-border)',
-                                    fontSize: '0.75rem'
-                                  }}>
-                                    {line.lineNumNew || ''}
-                                  </div>
-                                  <pre style={{
-                                    margin: 0,
-                                    paddingLeft: '0.5rem',
-                                    whiteSpace: 'pre',
-                                    fontFamily: 'inherit',
-                                    fontSize: 'inherit',
-                                    overflowX: 'visible'
-                                  }}>
-                                    {line.text}
-                                  </pre>
-                                </div>
-
-                                {fb && (
-                                  <div style={{
-                                    background: 'rgba(36, 41, 46, 0.85)',
-                                    borderLeft: '4px solid var(--github-green)',
-                                    borderRadius: '0 8px 8px 0',
-                                    padding: '0.8rem',
-                                    margin: '0.4rem 0.5rem 0.4rem 75px',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
-                                    fontFamily: "'Inter', sans-serif",
-                                    color: 'var(--app-fg)'
-                                  }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--github-green)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                                      <ShieldCheck size={14} />
-                                      <span>GitGuard AI Analysis</span>
-                                    </div>
-                                    <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: '1.45' }}>
-                                      {fb.comment}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                          <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: 'var(--muted-text)' }}>
+                            Configure custom operational policies.
+                          </p>
                         </div>
-                      ) : (
-                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted-text)' }}>
-                          Select a file on the left to inspect code changes.
+
+                        <div style={{ display: 'grid', gap: '0.6rem', borderTop: '1px solid var(--surface-border)', paddingTop: '0.8rem' }}>
+                          <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
+                            <span style={{ color: 'var(--muted-text)' }}>Active (Webhook Ingestion)</span>
+                            <input
+                              type="checkbox"
+                              checked={!!repo.active}
+                              onChange={(e) => handleToggleSetting(repo.repo_full_name, 'active', e.target.checked)}
+                              style={{ accentColor: 'var(--github-green)', width: '16px', height: '16px' }}
+                            />
+                          </label>
+                          <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
+                            <span style={{ color: 'var(--muted-text)' }}>Strict review checks</span>
+                            <input
+                              type="checkbox"
+                              checked={!!repo.strict_mode}
+                              onChange={(e) => handleToggleSetting(repo.repo_full_name, 'strict_mode', e.target.checked)}
+                              style={{ accentColor: 'var(--github-green)', width: '16px', height: '16px' }}
+                            />
+                          </label>
+                          <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
+                            <span style={{ color: 'var(--muted-text)' }}>Ignore linter errors</span>
+                            <input
+                              type="checkbox"
+                              checked={!!repo.ignore_linter}
+                              onChange={(e) => handleToggleSetting(repo.repo_full_name, 'ignore_linter', e.target.checked)}
+                              style={{ accentColor: 'var(--github-green)', width: '16px', height: '16px' }}
+                            />
+                          </label>
                         </div>
-                      )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Live Action Stream Panel */}
+            <article className="dashboard-panel live-stream-panel" style={{ padding: '1.5rem', borderRadius: '24px' }}>
+              <div className="dashboard-panel__header">
+                <div>
+                  <p className="dashboard-panel__kicker">Operational monitoring</p>
+                  <h2>Live Action Stream</h2>
+                </div>
+                <span>{reviews.length} total</span>
+              </div>
+              <div className="live-stream-list" style={{ marginTop: '1rem', display: 'grid', gap: '0.85rem', maxHeight: '20rem', overflowY: 'auto' }}>
+                {reviews.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '1.5rem', border: '1px dashed var(--surface-border)', borderRadius: '16px', color: 'var(--muted-text)', fontSize: '0.9rem' }}>
+                    Awaiting incoming webhook signals
+                  </div>
+                ) : (
+                  reviews.map((webhook) => {
+                    const statusClass = `status-${webhook.status ? webhook.status.toLowerCase() : 'completed'}`;
+                    return (
+                      <button
+                        type="button"
+                        key={`stream-${webhook.id}`}
+                        onClick={() => {
+                          setSelectedReview(webhook);
+                          setActiveTab('summary');
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.8rem 1rem',
+                          borderRadius: '12px',
+                          background: 'var(--surface-strong)',
+                          border: '1px solid ' + (selectedReview && selectedReview.id === webhook.id ? 'var(--github-green)' : 'var(--surface-border)'),
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          transition: 'all 180ms ease'
+                        }}
+                        className="live-stream-item"
+                      >
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <strong style={{ fontSize: '0.85rem', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: 'var(--app-fg)' }}>
+                            {webhook.repo_full_name}
+                          </strong>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--muted-text)', fontFamily: 'Courier New', display: 'block', marginTop: '0.2rem' }}>
+                            PR #{webhook.pr_number}
+                          </span>
+                        </div>
+                        <span className={`status-badge ${statusClass}`} style={{
+                          padding: '0.25rem 0.6rem',
+                          borderRadius: '8px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          flexShrink: 0
+                        }}>
+                          {webhook.status || 'Completed'}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </article>
+          </div>
+
+          {/* Right Content Grid (History Feed & Review Details) */}
+          <div className="right-details-grid">
+            <article className="dashboard-panel dashboard-panel--stream">
+              <div className="dashboard-panel__header">
+                <div>
+                  <p className="dashboard-panel__kicker">Review logs</p>
+                  <h2>History Feed</h2>
+                </div>
+                <span>{reviews.length} entries</span>
+              </div>
+
+              <div className="stream-list">
+                {isLoading ? (
+                  <div className="dashboard-loading-state">
+                    <span>Loading review logs...</span>
+                  </div>
+                ) : error ? (
+                  <div className="dashboard-error-state">
+                    <span>{error}</span>
+                  </div>
+                ) : reviews.length === 0 ? (
+                  <div className="dashboard-empty-state">
+                    <div className="dashboard-empty-state__icon-wrap">
+                      <ShieldCheck size={48} color="#24292E" />
+                    </div>
+                    <h3 className="dashboard-empty-state__title">System Active</h3>
+                    <p className="dashboard-empty-state__subtitle">Awaiting incoming pull request triggers</p>
+                  </div>
+                ) : (
+                  reviews.map((review) => (
+                    <button
+                      type="button"
+                      key={review.id}
+                      className={`stream-item ${selectedReview && selectedReview.id === review.id ? 'stream-item--active' : ''}`}
+                      onClick={() => {
+                        setSelectedReview(review);
+                        setActiveTab('summary');
+                      }}
+                    >
+                      <div className="stream-item__icon">
+                        <GitPullRequest size={16} />
+                      </div>
+                      <div className="stream-item__body">
+                        <strong style={{ display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {review.repo_full_name} · PR #{review.pr_number}
+                        </strong>
+                        <span style={{ display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {review.pr_title || 'AI review completed.'}
+                        </span>
+                        <div className="stream-item__meta" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', alignItems: 'center' }}>
+                          <span className="stream-item__meta-item">
+                            <Calendar size={12} />
+                            {new Date(review.timestamp).toLocaleString()}
+                          </span>
+                          <span className="stream-item__meta-item">
+                            <Layers size={12} />
+                            {formatSize(review.cleaned_diff_size)}
+                          </span>
+                          <span style={{
+                            padding: '0.15rem 0.4rem',
+                            borderRadius: '6px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            background: review.status === 'Completed' ? 'rgba(15, 191, 62, 0.15)' : review.status === 'Failed' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(242, 245, 243, 0.15)',
+                            color: review.status === 'Completed' ? 'var(--github-green)' : review.status === 'Failed' ? '#ef4444' : 'var(--muted-text)'
+                          }}>
+                            {review.status || 'Completed'}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </article>
+
+            <article className="dashboard-panel dashboard-panel--history">
+              <div className="dashboard-panel__header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '0.8rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div>
+                    <p className="dashboard-panel__kicker">Operational console</p>
+                    <h2>Review Details</h2>
+                  </div>
+                  {selectedReview && (
+                    <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--surface-strong)', padding: '0.2rem', borderRadius: '10px', border: '1px solid var(--surface-border)' }}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('summary')}
+                        style={{
+                          padding: '0.4rem 0.8rem',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          background: activeTab === 'summary' ? 'rgba(15, 191, 62, 0.15)' : 'transparent',
+                          color: activeTab === 'summary' ? 'var(--github-green)' : 'var(--muted-text)',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        Summary
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('diff')}
+                        style={{
+                          padding: '0.4rem 0.8rem',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          borderRadius: '8px',
+                          background: activeTab === 'diff' ? 'rgba(15, 191, 62, 0.15)' : 'transparent',
+                          color: activeTab === 'diff' ? 'var(--github-green)' : 'var(--muted-text)',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        Interactive Diff
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {selectedReview && (
+                  <div className="review-meta-details" style={{ margin: 0, padding: '0.8rem', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.5rem', borderRadius: '12px' }}>
+                    <div className="detail-field">
+                      <span className="detail-label">Repository</span>
+                      <span className="detail-value" style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>{selectedReview.repo_full_name}</span>
+                    </div>
+                    <div className="detail-field">
+                      <span className="detail-label">PR</span>
+                      <span className="detail-value" style={{ fontSize: '0.8rem' }}>#{selectedReview.pr_number}</span>
+                    </div>
+                    <div className="detail-field">
+                      <span className="detail-label">Diff Size</span>
+                      <span className="detail-value" style={{ fontSize: '0.8rem' }}>{formatSize(selectedReview.cleaned_diff_size)}</span>
                     </div>
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="history-console-empty">
-                <span>Select a review log to display details.</span>
-              </div>
-            )}
-          </article>
-        </section>
+
+              {selectedReview ? (
+                <div className="history-console" style={{ height: '100%', minHeight: '38rem', display: 'flex', flexDirection: 'column' }}>
+                  {activeTab === 'summary' ? (
+                    <div style={{ flex: 1, overflowY: 'auto' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--muted-text)', marginBottom: '0.8rem', fontSize: '0.85rem' }}>
+                        <FileCode2 size={16} />
+                        <span>AI Review Summary</span>
+                      </div>
+                      <pre className="monospace-markdown-surface" style={{ maxHeight: 'none', overflowY: 'visible' }}>{parsedSummary || 'No summary text available.'}</pre>
+                    </div>
+                  ) : (
+                    <div style={{
+                      display: 'flex',
+                      height: '100%',
+                      flex: 1,
+                      border: '1px solid var(--surface-border)',
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                      background: 'var(--surface-strong)',
+                      flexWrap: 'wrap'
+                    }}>
+                      {/* Left Pane: Files List */}
+                      <div style={{
+                        width: '100%',
+                        maxWidth: '200px',
+                        flex: '1 1 200px',
+                        borderRight: '1px solid var(--surface-border)',
+                        overflowY: 'auto',
+                        padding: '0.8rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.4rem',
+                        background: 'rgba(0, 0, 0, 0.2)'
+                      }}>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
+                          Files Changed
+                        </div>
+                        {diffFiles.length === 0 ? (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--muted-text)', padding: '0.5rem 0' }}>No diff data</span>
+                        ) : (
+                          diffFiles.map(file => {
+                            const fileCommentCount = inlineFeedbacks.filter(fb => {
+                              const fbFile = fb.file.toLowerCase();
+                              const targetFile = file.name.toLowerCase();
+                              return targetFile.endsWith(fbFile) || fbFile.endsWith(targetFile);
+                            }).length;
+
+                            return (
+                              <button
+                                type="button"
+                                key={file.name}
+                                onClick={() => setSelectedDiffFile(file)}
+                                style={{
+                                  width: '100%',
+                                  padding: '0.5rem 0.6rem',
+                                  borderRadius: '8px',
+                                  textAlign: 'left',
+                                  fontSize: '0.8rem',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  background: selectedDiffFile?.name === file.name ? 'rgba(15, 191, 62, 0.12)' : 'transparent',
+                                  color: selectedDiffFile?.name === file.name ? 'var(--github-green)' : 'var(--app-fg)',
+                                  border: '1px solid ' + (selectedDiffFile?.name === file.name ? 'rgba(15, 191, 62, 0.25)' : 'transparent'),
+                                  outline: 'none'
+                                }}
+                              >
+                                <span style={{
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  flex: 1,
+                                  fontFamily: 'Courier New',
+                                  fontWeight: selectedDiffFile?.name === file.name ? 700 : 400
+                                }}>
+                                  {file.name.split('/').pop()}
+                                </span>
+                                {fileCommentCount > 0 && (
+                                  <span style={{
+                                    background: 'var(--github-green)',
+                                    color: '#000000',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 800,
+                                    borderRadius: '999px',
+                                    padding: '0.05rem 0.35rem',
+                                    minWidth: '16px',
+                                    textAlign: 'center'
+                                  }}>
+                                    {fileCommentCount}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Right Pane: Diff View */}
+                      <div style={{
+                        flex: '1 1 300px',
+                        overflowY: 'auto',
+                        overflowX: 'auto',
+                        padding: '0.8rem',
+                        fontFamily: "'Courier New', Courier, monospace",
+                        fontSize: '0.85rem',
+                        background: 'rgba(0, 0, 0, 0.1)'
+                      }}>
+                        {selectedDiffFile ? (
+                          <div style={{ display: 'grid', gap: '1px' }}>
+                            <div style={{ padding: '0.3rem 0.5rem', borderBottom: '1px solid var(--surface-border)', color: 'var(--muted-text)', fontSize: '0.75rem', marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                              <FileCode2 size={14} />
+                              <span>{selectedDiffFile.name}</span>
+                            </div>
+                            {selectedDiffFile.lines.map((line) => {
+                              let lineBg = 'transparent';
+                              let textColor = 'var(--app-fg)';
+
+                              if (line.type === 'addition') {
+                                lineBg = 'rgba(15, 191, 62, 0.12)';
+                                textColor = 'var(--github-green)';
+                              } else if (line.type === 'deletion') {
+                                lineBg = 'rgba(239, 68, 68, 0.12)';
+                                textColor = '#ef4444';
+                              } else if (line.type === 'hunk-header') {
+                                lineBg = 'rgba(36, 41, 46, 0.4)';
+                                textColor = 'var(--muted-text)';
+                              }
+
+                              const fb = findFeedbackForLine(selectedDiffFile.name, line.text, inlineFeedbacks);
+
+                              return (
+                                <div key={line.id} style={{ display: 'grid', gap: '2px' }}>
+                                  <div style={{
+                                    display: 'flex',
+                                    background: lineBg,
+                                    color: textColor,
+                                    minHeight: '20px',
+                                    paddingRight: '0.5rem',
+                                    borderRadius: '4px'
+                                  }}>
+                                    <div style={{
+                                      width: '35px',
+                                      textAlign: 'right',
+                                      paddingRight: '0.4rem',
+                                      color: 'var(--muted-text)',
+                                      opacity: 0.5,
+                                      userSelect: 'none',
+                                      borderRight: '1px solid var(--surface-border)',
+                                      fontSize: '0.75rem'
+                                    }}>
+                                      {line.lineNumOld || ''}
+                                    </div>
+                                    <div style={{
+                                      width: '35px',
+                                      textAlign: 'right',
+                                      paddingRight: '0.4rem',
+                                      color: 'var(--muted-text)',
+                                      opacity: 0.5,
+                                      userSelect: 'none',
+                                      borderRight: '1px solid var(--surface-border)',
+                                      fontSize: '0.75rem'
+                                    }}>
+                                      {line.lineNumNew || ''}
+                                    </div>
+                                    <pre style={{
+                                      margin: 0,
+                                      paddingLeft: '0.5rem',
+                                      whiteSpace: 'pre',
+                                      fontFamily: 'inherit',
+                                      fontSize: 'inherit',
+                                      overflowX: 'visible'
+                                    }}>
+                                      {line.text}
+                                    </pre>
+                                  </div>
+
+                                  {fb && (
+                                    <div style={{
+                                      background: 'rgba(36, 41, 46, 0.85)',
+                                      borderLeft: '4px solid var(--github-green)',
+                                      borderRadius: '0 8px 8px 0',
+                                      padding: '0.8rem',
+                                      margin: '0.4rem 0.5rem 0.4rem 75px',
+                                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+                                      fontFamily: "'Inter', sans-serif",
+                                      color: 'var(--app-fg)'
+                                    }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--github-green)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
+                                        <ShieldCheck size={14} />
+                                        <span>GitGuard AI Analysis</span>
+                                      </div>
+                                      <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: '1.45' }}>
+                                        {fb.comment}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--muted-text)' }}>
+                            Select a file on the left to inspect code changes.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="history-console-empty">
+                  <span>Select a review log to display details.</span>
+                </div>
+              )}
+            </article>
+          </div>
+        </div>
       </main>
 
       <footer className="corporate-footer" style={{
