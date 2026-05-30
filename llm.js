@@ -1,28 +1,27 @@
 const Groq = require('groq-sdk');
+const { withRetry } = require('./retry');
 
 let groqClient;
 
-function buildDiffReviewMessages(diff, settings = {}) {
-  const strictMode = settings.strict_mode || false;
-  const ignoreLinter = settings.ignore_linter || false;
+function getGroqClient() {
+  if (!groqClient) {
+    const apiKey = process.env.GROQ_API_KEY;
 
-  let extra = '';
-  if (strictMode) extra += ' Also check edge cases, null safety, race conditions.';
-  if (ignoreLinter) extra += ' Ignore code style – focus on logic, security, performance.';
+    if (!apiKey) {
+      throw new Error('Missing GROQ_API_KEY in environment variables');
+    }
 
-  const systemPrompt = `You are an expert code reviewer. Analyze the git diff for:
-1. Bugs (logical errors, off-by-one, null pointers)
-2. Security vulnerabilities (SQL injection, XSS, hardcoded secrets)
-3. Performance issues (O(n²) loops, bad caching)
+    groqClient = new Groq({ apiKey });
+  }
 
-For each issue: quote the problematic lines, explain why it's wrong, and provide a corrected code block.
+  return groqClient;
+}
 
-Output in GitHub Markdown. If no issues, say "No critical issues found."${extra}`;
-
+function buildDiffReviewMessages(diff) {
   return [
     {
       role: 'system',
-      content: systemPrompt
+      content: 'You are GitGuard AI, an expert code reviewer. Analyze the provided diff for logical bugs, security vulnerabilities (such as SQL injection, hardcoded secrets, XSS, and high-risk performance flaws).\n\nFor EACH specific issue you identify, you MUST output a structured feedback block to allow inline display. Each block MUST use the following exact template:\n\n[FEEDBACK]\nFILE: <filepath>\nLINE: <exact text of the added line, starting with +>\nCOMMENT: <your concise, actionable review comment>\n[/FEEDBACK]\n\nAt the end of your response, you may write a general summary of the pull request under the heading "### Summary".'
     },
     {
       role: 'user',
@@ -31,35 +30,21 @@ Output in GitHub Markdown. If no issues, say "No critical issues found."${extra}
   ];
 }
 
-async function analyzeDiffWithLLM(diff, settings = {}) {
-  const apiKey = process.env.GROQ_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('Missing GROQ_API_KEY in environment variables');
-  }
-
-  const groq = getGroqClient(apiKey);
-
+async function analyzeDiffWithLLM(diff) {
   try {
-    const completion = await groq.chat.completions.create({
-      messages: buildDiffReviewMessages(diff, settings),
+    const groq = getGroqClient();
+
+    const completion = await withRetry(() => groq.chat.completions.create({
+      messages: buildDiffReviewMessages(diff),
       model: 'llama-3.3-70b-versatile',
       temperature: 0.3,
       max_tokens: 1500,
-    });
-    return completion.choices[0]?.message?.content || '❌ No response from Groq.';
+    }));
+    return completion.choices[0]?.message?.content || 'No response was returned from Groq.';
   } catch (error) {
     console.error('Groq error:', error);
     throw new Error(`AI analysis failed: ${error.message}`);
   }
-}
-
-function getGroqClient(apiKey) {
-  if (!groqClient) {
-    groqClient = new Groq({ apiKey });
-  }
-
-  return groqClient;
 }
 
 module.exports = { analyzeDiffWithLLM, buildDiffReviewMessages, getGroqClient };

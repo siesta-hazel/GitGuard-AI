@@ -1,0 +1,51 @@
+<form class="repo-card" method="POST" action="/dashboard/settings">
+  <input type="hidden" name="repo_full_name" value="<%= repo.repo_full_name %>">
+
+  <div class="repo-card-header">
+    <div class="repo-body">
+      <div class="repo-topline">
+        <div>
+          <span class="repo-title"><%= repo.repo_full_name %></span>
+          <p class="repo-description">
+            <%= repo.active ? 'Monitoring pull requests and streaming review events in real time.' : 'Temporarily paused. Re-enable monitoring to resume webhook processing.' %>
+          </p>
+        </div>
+      </div>
+      <div class="repo-badges">
+        <span class="status-pill <%= repo.active ? 'active' : 'inactive' %>"><%= repo.active ? 'Monitoring' : 'Paused' %></span>
+        <span class="review-chip"><%= repo.reviewCount %> recent reviews</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="policy-grid">
+    <label class="switch">
+      <input type="checkbox" name="strict_mode" <%= repo.strict_mode ? 'checked' : '' %>>
+      <span class="switch-ui"></span>
+      <span class="switch-copy">
+        <span class="switch-title">Strict mode</span>
+        <span class="switch-help">Higher scrutiny on every diff.</span>
+      </span>
+    </label>
+
+    <label class="switch">
+      <input type="checkbox" name="ignore_linter" <%= repo.ignore_linter ? 'checked' : '' %>>
+      <span class="switch-ui"></span>
+      <span class="switch-copy">
+        <span class="switch-title">Ignore linter</span>
+        <span class="switch-help">Allow AI review even when lint warnings exist.</span>
+      </span>
+    </label>
+
+    <label class="switch">
+      <input type="checkbox" name="active" <%= repo.active ? 'checked' : '' %>>
+      <span class="switch-ui"></span>
+      <span class="switch-copy">
+        <span class="switch-title">Active</span>
+        <span class="switch-help">Keep GitGuard AI listening to this repository.</span>
+      </span>
+    </label>
+  </div>
+
+  <button class="primary-button" type="submit">Save policy</button>
+</form>

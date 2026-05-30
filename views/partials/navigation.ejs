@@ -1,0 +1,16 @@
+<nav class="top-nav glass-panel reveal" style="--delay: 20ms;">
+  <div class="brand-lockup">
+    <span class="brand-mark" aria-hidden="true">
+      <%- include('github-icon') %>
+    </span>
+    <div>
+      <p class="brand-kicker">GitGuard AI</p>
+      <h1 class="brand-title">GitGuard AI Command Center</h1>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a class="<%= activePage === 'dashboard' ? 'active' : '' %>" href="/dashboard">Overview</a>
+    <a class="<%= activePage === 'history' ? 'active' : '' %>" href="/history">Review History</a>
+  </div>
+</nav>

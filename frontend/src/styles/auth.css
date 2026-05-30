@@ -1,0 +1,246 @@
+.auth-page {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-fg);
+  padding: 1.25rem;
+}
+
+.auth-glow {
+  position: fixed;
+  width: 26rem;
+  height: 26rem;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(78px);
+  opacity: 0.2;
+}
+
+.auth-glow--one {
+  top: -8rem;
+  left: -7rem;
+  background: rgba(15, 191, 62, 0.3);
+}
+
+.auth-glow--two {
+  right: -7rem;
+  bottom: -8rem;
+  background: rgba(15, 191, 62, 0.14);
+}
+
+.auth-theme-toggle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+}
+
+.auth-shell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1.2rem;
+  width: min(100%, 520px);
+}
+
+.auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  justify-self: center;
+}
+
+.auth-brand h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  letter-spacing: -0.04em;
+}
+
+.auth-brand p {
+  margin: 0.15rem 0 0;
+  color: var(--muted-text);
+  font-size: 0.92rem;
+}
+
+.auth-card {
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1.35rem, 4vw, 2.1rem);
+  border: 1px solid var(--surface-border);
+  border-radius: 28px;
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.24);
+}
+
+.auth-card__header {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.auth-card__header h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 1.95rem);
+  letter-spacing: -0.04em;
+}
+
+.auth-card__header p {
+  margin: 0;
+  color: var(--muted-text);
+  line-height: 1.7;
+}
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.auth-field span {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--app-fg) 86%, transparent);
+}
+
+.auth-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 1rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 18px;
+  background: var(--surface-strong);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.auth-input-wrap:focus-within {
+  border-color: var(--github-green);
+  box-shadow: 0 0 0 3px rgba(15, 191, 62, 0.12);
+  transform: translateY(-1px);
+}
+
+.auth-input-wrap svg {
+  flex: 0 0 auto;
+  color: color-mix(in srgb, var(--app-fg) 62%, transparent);
+}
+
+.auth-input-wrap input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.95rem 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--app-fg);
+  font: inherit;
+}
+
+.auth-input-wrap input::placeholder {
+  color: color-mix(in srgb, var(--app-fg) 45%, transparent);
+}
+
+.password-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--app-fg) 74%, transparent);
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  background: rgba(15, 191, 62, 0.1);
+  color: var(--app-fg);
+  outline: none;
+}
+
+.auth-field small {
+  color: #2ca44f;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.auth-banner {
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(15, 191, 62, 0.22);
+  border-radius: 16px;
+  background: rgba(15, 191, 62, 0.08);
+  color: color-mix(in srgb, var(--app-fg) 86%, transparent);
+  line-height: 1.6;
+}
+
+.auth-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.95rem 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--github-green);
+  color: #000000;
+  font-weight: 800;
+  box-shadow: 0 16px 38px rgba(15, 191, 62, 0.24);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.auth-submit:hover,
+.auth-submit:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 42px rgba(15, 191, 62, 0.34);
+  filter: brightness(1.03);
+  outline: none;
+}
+
+.auth-submit:disabled {
+  cursor: wait;
+  opacity: 0.8;
+  transform: none;
+}
+
+.auth-switcher {
+  text-align: center;
+  color: var(--muted-text);
+  line-height: 1.7;
+}
+
+.auth-switcher p {
+  margin: 0;
+}
+
+.auth-switcher button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--github-green);
+  font-weight: 700;
+}
+
+.auth-switcher button:hover,
+.auth-switcher button:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+@media (max-width: 520px) {
+  .auth-page {
+    padding: 0.9rem;
+  }
+
+  .auth-brand {
+    align-items: flex-start;
+  }
+
+  .auth-card {
+    border-radius: 24px;
+  }
+}

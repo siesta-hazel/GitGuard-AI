@@ -4,6 +4,134 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GitGuard AI Dashboard</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="/css/gitguard-dashboard.css">
+</head>
+<body class="dashboard-page">
+    <main class="dashboard-shell">
+        <%- include('partials/navigation', { activePage: 'dashboard' }) %>
+
+        <section class="hero-panel glass-panel reveal" style="--delay: 110ms;">
+            <div class="hero-grid">
+                <div class="hero-copy hero-copy--lead">
+                    <p class="section-kicker">Command surface</p>
+                    <h2 class="hero-title">A premium control center for GitHub review intelligence.</h2>
+                    <p class="hero-description">
+                        Track repository policies, stream webhook activity, and inspect AI code review output inside a dark glass interface tuned for high-contrast readability and dense operational work.
+                    </p>
+                    <div class="hero-actions hero-actions--stacked">
+                        <span class="pill success">Total repos <%= metrics.totalRepos %></span>
+                        <span class="pill">Active repos <%= metrics.activeRepos %></span>
+                        <span class="pill dim">Recent reviews <%= metrics.recentReviews %></span>
+                    </div>
+                </div>
+
+                <div class="hero-copy hero-copy--stats">
+                    <div class="panel-meta">
+                        <span class="panel-kicker">Policy snapshot</span>
+                        <span class="info-pill"><%= metrics.strictRepos %> strict policies enabled</span>
+                    </div>
+                    <div class="metric-grid">
+                        <%- include('partials/metric-card', { label: 'Repositories', value: metrics.totalRepos, detail: 'Tracked repositories in the control plane.' }) %>
+                        <%- include('partials/metric-card', { label: 'Active', value: metrics.activeRepos, detail: 'Repos currently receiving webhook traffic.' }) %>
+                        <%- include('partials/metric-card', { label: 'Strict mode', value: metrics.strictRepos, detail: 'Repositories using tighter review rules.' }) %>
+                        <%- include('partials/metric-card', { label: 'Recent reviews', value: metrics.recentReviews, detail: 'Latest AI responses surfaced on the board.' }) %>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="split-canvas">
+            <article class="glass-panel canvas-panel reveal" style="--delay: 200ms;">
+                <div class="panel-heading">
+                    <div>
+                        <p class="panel-kicker">Incoming signal</p>
+                        <h3 class="panel-title">Live incoming webhooks</h3>
+                    </div>
+                    <span class="badge live">Realtime stream</span>
+                </div>
+
+                <div class="webhook-stream">
+                    <% if (webhookFeed.length) { %>
+                        <% webhookFeed.forEach(webhook => { %>
+                            <%- include('partials/webhook-item', { webhook }) %>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="empty-state">
+                            <p class="empty-state-text">No webhook activity has been recorded yet. The stream will populate as pull requests are opened or synchronized.</p>
+                        </div>
+                    <% } %>
+                </div>
+            </article>
+
+            <article class="glass-panel canvas-panel reveal review-panel" style="--delay: 280ms;">
+                <div class="panel-heading">
+                    <div>
+                        <p class="panel-kicker">Markdown output</p>
+                        <h3 class="panel-title">AI code review panel</h3>
+                    </div>
+                    <span class="badge archived">Scrollable review view</span>
+                </div>
+
+                <% if (primaryReview) { %>
+                    <div class="review-frame">
+                        <div class="review-meta-grid">
+                            <div class="meta-card">
+                                <span class="subtle-label">Repository</span>
+                                <strong><%= primaryReview.repo_full_name %></strong>
+                            </div>
+                            <div class="meta-card">
+                                <span class="subtle-label">PR</span>
+                                <strong>#<%= primaryReview.pr_number %></strong>
+                            </div>
+                            <div class="meta-card">
+                                <span class="subtle-label">Reviewer</span>
+                                <strong><%= primaryReview.reviewer %></strong>
+                            </div>
+                        </div>
+
+                        <div class="markdown-surface">
+                            <div class="review-chip-row">
+                                <span class="review-chip highlight">Latest markdown</span>
+                                <span class="review-chip"><%= primaryReview.timestamp %></span>
+                                <span class="review-chip"><%= primaryReview.pr_title %></span>
+                            </div>
+                            <pre><%= primaryReview.llm_response %></pre>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state">
+                        <p class="empty-state-text">No AI review has been stored yet. Once a pull request is processed, the markdown output will appear here.</p>
+                    </div>
+                <% } %>
+            </article>
+        </section>
+
+        <section class="glass-panel repo-section reveal" style="--delay: 360ms;">
+            <div class="section-heading">
+                <div>
+                    <p class="section-kicker">Repository overview</p>
+                    <h3 class="section-title">Premium repo controls</h3>
+                </div>
+                <span class="badge"><%= repoOverview.length %> repositories configured</span>
+            </div>
+
+            <div class="repo-grid">
+                <% if (repoOverview.length) { %>
+                    <% repoOverview.forEach(repo => { %>
+                        <%- include('partials/repo-card', { repo }) %>
+                    <% }) %>
+                <% } else { %>
+                    <div class="empty-state">
+                        <p class="empty-state-text">No repositories configured yet. When a pull request is reviewed, the repo controls will be available here.</p>
+                    </div>
+                <% } %>
+            </div>
+        </section>
+
+        <%- include('partials/footer') %>
+    </main>
     <style>
         * {
             margin: 0;

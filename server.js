@@ -1,114 +1,178 @@
-const db = require('./db');
 const path = require('path');
-
 require('dotenv').config();
-const express = require('express');
-const crypto = require('crypto');
-const { Octokit } = require('@octokit/rest');
-const { analyzePullRequest } = require('./github');
 
+// Validate required environment variables. In production, exit if any are missing.
+function validateEnv() {
+  const requiredBase = ['GITHUB_WEBHOOK_SECRET', 'GROQ_API_KEY', 'JWT_SECRET'];
+  const missingBase = requiredBase.filter((k) => !process.env[k]);
+
+  const hasAppAuth = process.env.GITHUB_APP_ID && process.env.GITHUB_PRIVATE_KEY;
+  const hasTokenAuth = !!process.env.GITHUB_ACCESS_TOKEN;
+
+  const missingAuth = (!hasAppAuth && !hasTokenAuth) ? ['GITHUB_ACCESS_TOKEN (or GITHUB_APP_ID and GITHUB_PRIVATE_KEY)'] : [];
+  const missing = [...missingBase, ...missingAuth];
+
+  if (missing.length === 0) return;
+
+  const message = `Missing required environment variables: ${missing.join(', ')}`;
+  if (process.env.NODE_ENV === 'production') {
+    console.error(message);
+    process.exit(1);
+  }
+
+  console.warn(message);
+}
+validateEnv();
+
+const express = require('express');
+const authRouter = require('./routes/auth');
+const { createWebhookRouter } = require('./routes/webhook');
+const reviewsRouter = require('./routes/reviews');
+const { pauseQueue, waitForActiveAnalyses } = require('./github');
+const { closeDatabase } = require('./data/store');
 
 const app = express();
-const octokit = new Octokit({ auth: process.env.GITHUB_ACCESS_TOKEN });
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+// Allow local frontend development ports to call API routes directly.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && /^http:\/\/localhost:\d+$/.test(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  }
 
-app.get('/health', (req, res) => res.status(200).send('OK'));
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+
+  next();
+});
 
 app.use(express.json({
-  verify: (req, res, buf) => { req.rawBody = buf; }
+  verify: (req, res, buf) => { req.rawBody = buf; },
 }));
+app.use(express.urlencoded({ extended: true }));
 
-app.post('/webhook', async (req, res) => {
-  const event = req.headers['x-github-event'];
-  const signature = req.headers['x-hub-signature-256'];
+// Serve built React assets and other public files
+app.use(express.static(path.join(__dirname, 'public/dist')));
+app.use(express.static(path.join(__dirname, 'public')));
 
-  if (!event) {
-    return res.status(400).send('Missing X-GitHub-Event header');
-  }
+// Decoupled Router Mounts
+app.use('/api/auth', authRouter);
+app.use('/webhook', createWebhookRouter());
+app.use('/api', reviewsRouter);
 
-  console.log('📨 Webhook received:', { event, signature: signature ? 'present' : 'missing' });
-
-  if (!verifySignature(req.rawBody, signature)) {
-    console.error('❌ Signature verification failed');
-    return res.status(401).send('Invalid signature');
-  }
-
-  const payload = req.body;
-  console.log('✅ Signature valid. Action:', payload.action);
-
-  if (event === 'pull_request' && (payload.action === 'opened' || payload.action === 'synchronize')) {
-    const owner = payload.repository?.owner?.login;
-    const repo = payload.repository?.name;
-    const pull_number = payload.pull_request?.number;
-    const pr_title = payload.pull_request?.title || 'Untitled PR';
-
-    if (!owner || !repo || !pull_number) {
-      console.error('❌ Missing owner, repo, or pull_request.number in webhook payload');
-      return res.status(400).send('Invalid pull request payload');
-    }
-
-    console.log(`🔍 Processing PR #${pull_number}`);
-    analyzePullRequest(octokit, owner, repo, pull_number, pr_title).catch(err => console.error('PR processing error:', err));
-  } else {
-    console.log('⏭️ Ignoring event:', event, payload.action);
-  }
-
-  res.status(200).send('OK');
+// Health Check API
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'gitguard-ai',
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    port: Number(process.env.PORT || 3000),
+  });
 });
 
-function verifySignature(rawBody, signature) {
-  if (!signature || !rawBody) return false;
-  const secret = process.env.GITHUB_WEBHOOK_SECRET;
-  if (!secret) {
-    console.error('⚠️ GITHUB_WEBHOOK_SECRET is not set in .env');
-    return false;
-  }
-  const hmac = crypto.createHmac('sha256', secret);
-  const digest = 'sha256=' + hmac.update(rawBody).digest('hex');
-  const expectedBuffer = Buffer.from(digest);
-  const receivedBuffer = Buffer.from(signature);
-
-  if (expectedBuffer.length !== receivedBuffer.length) {
-    return false;
+// React SPA Wildcard Fallback Routing
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/webhook')) {
+    return next();
   }
 
-  return crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+  res.sendFile(path.join(__dirname, 'public/dist', 'index.html'), (err) => {
+    if (err) {
+      res.status(200).send('GitGuard AI backend running. Frontend assets not yet compiled in public/dist.');
+    }
+  });
+});
+
+// General Express error-handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled server error:', err.message || err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+const PORT = Number(process.env.PORT || 3000);
+
+let runningServer = null;
+
+function startServer(port) {
+  runningServer = app.listen(port, () => {
+    console.log(`GitGuard AI running on port ${port}`);
+    console.log(`Webhook signature verification secret loaded: ${process.env.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
+  });
+
+  runningServer.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.warn(`Port ${port} is already in use, trying ${port + 1}...`);
+      runningServer.close(() => startServer(port + 1));
+      return;
+    }
+
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  });
 }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 GitGuard AI running on port ${PORT}`);
-  console.log(`📋 Webhook secret loaded: ${process.env.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
-});
+startServer(PORT);
 
-// Dashboard home – list all repos with settings
-app.get('/dashboard', (req, res) => {
-  db.all('SELECT * FROM repo_settings ORDER BY repo_full_name', (err, repos) => {
-    if (err) return res.status(500).send('Database error');
-    res.render('dashboard', { repos });
-  });
-});
+let isShuttingDown = false;
 
-// Update settings for a repository
-app.post('/dashboard/settings', express.urlencoded({ extended: true }), (req, res) => {
-  const { repo_full_name, strict_mode, ignore_linter, active } = req.body;
-  db.run(
-    `INSERT OR REPLACE INTO repo_settings (repo_full_name, strict_mode, ignore_linter, active)
-     VALUES (?, ?, ?, ?)`,
-    [repo_full_name, strict_mode === 'on' ? 1 : 0, ignore_linter === 'on' ? 1 : 0, active === 'on' ? 1 : 0],
-    (err) => {
-      if (err) return res.status(500).send('Failed to update');
-      res.redirect('/dashboard');
+async function gracefulShutdown(signal) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  console.log(`Received signal ${signal}. Starting graceful shutdown protocol.`);
+
+  try {
+    if (runningServer) {
+      console.log('Closing HTTP server...');
+      await new Promise((resolve) => {
+        runningServer.close((err) => {
+          if (err) {
+            console.error('Error closing HTTP server:', err);
+          } else {
+            console.log('HTTP server closed successfully.');
+          }
+          resolve();
+        });
+      });
     }
-  );
+
+    // 1. Pause the webhook queue
+    pauseQueue();
+
+    // 2. Allow active analyses to complete
+    console.log('Waiting for active LLM diff analyses to complete...');
+    await waitForActiveAnalyses();
+    console.log('Active analyses completed.');
+
+    // 3. Cleanly close database connections
+    console.log('Closing database connection...');
+    await closeDatabase();
+    console.log('Database connection closed cleanly.');
+
+    console.log('Graceful shutdown completed successfully. Exiting.');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during graceful shutdown:', error);
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// History log – show all past reviews
-app.get('/history', (req, res) => {
-  db.all('SELECT * FROM review_history ORDER BY timestamp DESC LIMIT 100', (err, reviews) => {
-    if (err) return res.status(500).send('Database error');
-    res.render('history', { reviews });
-  });
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception thrown:', error);
 });
