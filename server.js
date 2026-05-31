@@ -1,30 +1,6 @@
 const path = require('path');
-require('dotenv').config();
-
-// Validate required environment variables. In production, exit if any are missing.
-function validateEnv() {
-  const requiredBase = ['GITHUB_WEBHOOK_SECRET', 'GROQ_API_KEY', 'JWT_SECRET'];
-  const missingBase = requiredBase.filter((k) => !process.env[k]);
-
-  const hasAppAuth = process.env.GITHUB_APP_ID && process.env.GITHUB_PRIVATE_KEY;
-  const hasTokenAuth = !!process.env.GITHUB_ACCESS_TOKEN;
-
-  const missingAuth = (!hasAppAuth && !hasTokenAuth) ? ['GITHUB_ACCESS_TOKEN (or GITHUB_APP_ID and GITHUB_PRIVATE_KEY)'] : [];
-  const missing = [...missingBase, ...missingAuth];
-
-  if (missing.length === 0) return;
-
-  const message = `Missing required environment variables: ${missing.join(', ')}`;
-  if (process.env.NODE_ENV === 'production') {
-    console.error(message);
-    process.exit(1);
-  }
-
-  console.warn(message);
-}
-validateEnv();
-
 const express = require('express');
+const config = require('./config');
 const authRouter = require('./routes/auth');
 const { createWebhookRouter } = require('./routes/webhook');
 const reviewsRouter = require('./routes/reviews');
@@ -72,7 +48,7 @@ app.get('/health', (req, res) => {
     service: 'gitguard-ai',
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
-    port: Number(process.env.PORT || 3000),
+    port: config.PORT,
   });
 });
 
@@ -89,23 +65,30 @@ app.get('*', (req, res, next) => {
   });
 });
 
-// General Express error-handling middleware
+// Global Express error-handling middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled server error:', err.message || err);
+  const errorId = `ERR-TRK-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  console.error(`[${errorId}] Unhandled application error:`, err);
+
   if (res.headersSent) {
     return next(err);
   }
-  res.status(500).json({ error: 'Internal Server Error' });
-});
 
-const PORT = Number(process.env.PORT || 3000);
+  res.status(err.status || 500).json({
+    success: false,
+    error: {
+      message: 'Internal Server Error',
+      tracker: errorId
+    }
+  });
+});
 
 let runningServer = null;
 
 function startServer(port) {
   runningServer = app.listen(port, () => {
     console.log(`GitGuard AI running on port ${port}`);
-    console.log(`Webhook signature verification secret loaded: ${process.env.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
+    console.log(`Webhook signature verification secret loaded: ${config.GITHUB_WEBHOOK_SECRET ? 'YES' : 'NO'}`);
   });
 
   runningServer.on('error', (error) => {
@@ -120,7 +103,7 @@ function startServer(port) {
   });
 }
 
-startServer(PORT);
+startServer(config.PORT);
 
 let isShuttingDown = false;
 
@@ -170,9 +153,11 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  const errorId = `ERR-REJ-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  console.error(`[${errorId}] Unhandled Rejection at:`, promise, 'reason:', reason);
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception thrown:', error);
+  const errorId = `ERR-UNC-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  console.error(`[${errorId}] Uncaught Exception thrown:`, error);
 });

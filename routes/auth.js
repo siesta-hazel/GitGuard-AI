@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createUser, getUserByEmail } = require('../data/store');
+const config = require('../config');
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ function validateEmail(email) {
 }
 
 function signSessionToken(user) {
-  const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-local-jwt-secret');
+  const secret = config.JWT_SECRET;
 
   if (!secret) {
     throw new Error('JWT_SECRET is not set');

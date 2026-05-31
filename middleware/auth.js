@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const config = require('../config');
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -8,7 +9,7 @@ function authenticateToken(req, res, next) {
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? '' : 'dev-local-jwt-secret');
+  const secret = config.JWT_SECRET;
   if (!secret) {
     console.error('JWT_SECRET is not configured in environment');
     return res.status(500).json({ error: 'Authentication service misconfigured' });

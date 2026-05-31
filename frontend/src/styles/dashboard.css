@@ -614,6 +614,7 @@ button.stream-item:hover {
 
 /* Typography Hardening */
 h1, h2, h3, h4, h5, h6,
+body, button, input, label, select, textarea,
 .dashboard-nav,
 .landing-nav,
 .metric-tile,
@@ -630,7 +631,10 @@ h1, h2, h3, h4, h5, h6,
 .monospace-markdown-surface,
 .code-diff,
 .history-console pre,
-.history-console-empty {
+.history-console-empty,
+pre,
+code,
+.diff-code-line {
   font-family: 'Courier New', Courier, monospace !important;
 }
 
@@ -642,7 +646,7 @@ h1, h2, h3, h4, h5, h6,
 /* Two-Column Main Layout Grid & Spacing */
 .dashboard-grid-layout {
   display: grid;
-  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-columns: 380px minmax(0, 1fr) !important;
   gap: 1.2rem;
   align-items: start;
   width: 100%;

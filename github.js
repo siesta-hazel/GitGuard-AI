@@ -1,5 +1,6 @@
 const { Octokit } = require('@octokit/rest');
 const { createAppAuth } = require('@octokit/auth-app');
+const config = require('./config');
 const { analyzeDiffWithLLM } = require('./llm');
 const { saveReviewHistory, updateReviewHistory, getRepoSettings } = require('./data/store');
 const { withRetry } = require('./retry');
@@ -100,9 +101,9 @@ function cleanRawDiff(rawDiff) {
     const truncated = cleaned.slice(0, 8000);
     const lastNewline = truncated.lastIndexOf('\n');
     if (lastNewline > 0) {
-      cleaned = truncated.substring(0, lastNewline) + '\n[Diff truncated by GitGuard AI to preserve context window limits]';
+      cleaned = truncated.substring(0, lastNewline) + '\n[Content Truncated by GitGuard AI to preserve token context limits]';
     } else {
-      cleaned = truncated + '\n[Diff truncated by GitGuard AI to preserve context window limits]';
+      cleaned = truncated + '\n[Content Truncated by GitGuard AI to preserve token context limits]';
     }
   }
 
@@ -110,37 +111,14 @@ function cleanRawDiff(rawDiff) {
 }
 
 function getInstallationOctokit(installationId) {
-  const token = process.env.GITHUB_ACCESS_TOKEN;
+  const token = config.GITHUB_ACCESS_TOKEN;
   if (token) {
     return new Octokit({
       auth: token,
     });
   }
 
-  const appId = process.env.GITHUB_APP_ID;
-  let privateKey = process.env.GITHUB_PRIVATE_KEY;
-
-  if (!appId || !privateKey) {
-    throw new Error('Missing GITHUB_ACCESS_TOKEN or GITHUB_APP_ID/GITHUB_PRIVATE_KEY in environment variables');
-  }
-
-  // Handle base64 encoded private keys (common in cloud environments)
-  if (!privateKey.includes('-----BEGIN')) {
-    try {
-      privateKey = Buffer.from(privateKey, 'base64').toString('utf8');
-    } catch (e) {
-      // Ignore conversion if it is already raw
-    }
-  }
-
-  return new Octokit({
-    authStrategy: createAppAuth,
-    auth: {
-      appId,
-      privateKey,
-      installationId,
-    },
-  });
+  throw new Error('Missing GITHUB_ACCESS_TOKEN in frozen configuration guard');
 }
 
 // In-memory queue to process pull request analysis sequentially
@@ -195,18 +173,19 @@ async function enqueuePullRequest(task) {
 }
 
 function triggerQueueProcessing() {
+  processQueue().catch(err => {
+    console.error('Queue processor trigger error:', err.message || err);
+  });
+}
+
+async function processQueue() {
   if (isQueuePaused || isProcessingQueue || prQueue.length === 0) {
     return;
   }
 
   isProcessingQueue = true;
 
-  setTimeout(async () => {
-    if (isQueuePaused) {
-      isProcessingQueue = false;
-      return;
-    }
-
+  try {
     const task = prQueue.shift();
     if (task) {
       const { installationId, owner, repo, pullNumber, userId, reviewId } = task;
@@ -258,10 +237,13 @@ function triggerQueueProcessing() {
         }
       }
     }
-
+  } finally {
     isProcessingQueue = false;
-    triggerQueueProcessing();
-  }, 1000); // 1-second delay between sequential reviews to prevent hitting API secondary limits
+    // Introduce a delay before processing next item to prevent hitting secondary limits
+    setTimeout(() => {
+      triggerQueueProcessing();
+    }, 1000);
+  }
 }
 
 async function analyzePullRequest(octokit, owner, repo, pull_number, userId = null, reviewId = null) {
@@ -329,6 +311,7 @@ async function analyzePullRequest(octokit, owner, repo, pull_number, userId = nu
         issue_number: pull_number,
         body: llmResponse,
       }));
+      console.log(`Successfully posted PR review comment on GitHub for ${repoName}#${pull_number}`);
     } catch (commentError) {
       const permissionMessage = commentError?.status === 403 || commentError?.status === 404
         ? 'GitHub token permission restriction or repository access issue'
