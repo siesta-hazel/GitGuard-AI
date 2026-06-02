@@ -2,13 +2,14 @@ const express = require('express');
 const crypto = require('crypto');
 const { enqueuePullRequest } = require('../github');
 const { getRepoSettings } = require('../data/store');
+const config = require('../config');
 
 function verifySignature(rawBody, signature) {
   if (!rawBody || !signature || typeof signature !== 'string') {
     return false;
   }
 
-  const secret = process.env.GITHUB_WEBHOOK_SECRET;
+  const secret = config.GITHUB_WEBHOOK_SECRET;
   if (!secret) {
     console.error('Webhook secret is not configured');
     return false;
