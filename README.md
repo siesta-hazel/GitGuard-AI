@@ -175,32 +175,6 @@ The dashboard will show:
 * Live webhook stream (recent pull request events)
 * AI review details (Markdown summary, interactive diff with inline comments)
 
----
-
-## Testing the Bot
-
-### Simple Buggy PR
-
-Create a file `calculator.js` with:
-
-```javascript
-function sumArray(arr) {
-  let sum = 0;
-  for (let i = 0; i <= arr.length; i++) {  // off-by-one
-    sum += arr[i];
-  }
-  return sum;
-}
-```
-
-Open a pull request. Within a few seconds, GitGuard AI will comment with the bug and a corrected loop.
-
-### More Test Cases
-
-See `TESTING.md` (or the examples below) for SQL injection, quadratic loops, hardcoded secrets, memory leaks, and edge cases (empty diff, binary files, multiple files).
-
----
-
 ## Docker Deployment
 
 Build and run with Docker Compose:
