@@ -1,34 +1,34 @@
-# 🛡️ GitGuard AI – Automated Pull Request Sentinel
+# GitGuard AI – Automated Pull Request Sentinel
 
 GitGuard AI is an internal tool that listens for GitHub pull request events, analyzes code diffs using **Groq LLM** (fast, cost-effective), and posts intelligent code reviews directly on the PR – catching bugs, security issues, and performance problems **before** they reach production. The dashboard is protected by a **login page** with registration and token-based authentication.
 
 ---
 
-## ✨ Features
+## Features
 
-* 🔍 **Automatic PR analysis** – triggered on `opened` or `synchronize` events.
-* 🤖 **AI-powered reviews** using Groq’s Llama 3.3 70B model.
-* 🐞 **Detects**:
+* **Automatic PR analysis** – triggered on `opened` or `synchronize` events.
+* **AI-powered reviews** using Groq’s Llama 3.3 70B model.
+* **Detects**:
 
   * Logical bugs (off-by-one, null pointers, race conditions)
   * Security vulnerabilities (SQL injection, XSS, hardcoded secrets, `eval()`)
   * Performance issues (O(n²) loops, memory leaks)
-* 💡 **Suggests fixed code** – not just warnings, but corrected blocks.
-* 📝 **Markdown-formatted comments** – clear, actionable, and GitHub-flavored.
-* 🔒 **Secure webhook** – HMAC-SHA256 signature verification.
-* 🧹 **Token-efficient diff cleaning** – only relevant lines sent to the LLM.
-* 📊 **Premium dashboard** (React) with:
+* **Suggests fixed code** – not just warnings, but corrected blocks.
+* **Markdown-formatted comments** – clear, actionable, and GitHub-flavored.
+* **Secure webhook** – HMAC-SHA256 signature verification.
+* **Token-efficient diff cleaning** – only relevant lines sent to the LLM.
+* **Premium dashboard** (React) with:
 
   * Light/dark mode toggle
   * Real-time webhook stream
   * Interactive diff viewer with inline AI comments
   * Repository policy controls (Strict Mode, Active/Inactive)
   * Review history with Markdown rendering
-* 🔐 **Authentication** – login and registration pages, JWT session stored in `localStorage`.
+* **Authentication** – login and registration pages, JWT session stored in `localStorage`.
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
 | Component         | Technology                                    |
 | ----------------- | --------------------------------------------- |
@@ -46,7 +46,7 @@ GitGuard AI is an internal tool that listens for GitHub pull request events, ana
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 GitGuard-AI/
@@ -76,7 +76,7 @@ GitGuard-AI/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -155,7 +155,7 @@ Copy the HTTPS URL (e.g. `https://abc123.ngrok-free.dev`). This will be your web
 
 ---
 
-## 🔐 Authentication & Dashboard Access
+## Authentication & Dashboard Access
 
 The application has a **login page** and a **registration page**.
 
@@ -177,7 +177,7 @@ The dashboard will show:
 
 ---
 
-## 🧪 Testing the Bot
+## Testing the Bot
 
 ### Simple Buggy PR
 
@@ -201,7 +201,7 @@ See `TESTING.md` (or the examples below) for SQL injection, quadratic loops, har
 
 ---
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 Build and run with Docker Compose:
 
