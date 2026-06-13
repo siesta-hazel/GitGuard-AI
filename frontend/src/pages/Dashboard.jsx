@@ -526,7 +526,7 @@ function Dashboard({ theme, onToggleTheme }) {
   }, [selectedReview]);
 
   return (
-    <div className="dashboard-page" style={{ background: '#000000', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="dashboard-page" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {isProcessing && (
         <div className="processing-loading-overlay">
           <div className="processing-loading-overlay__content">
@@ -730,7 +730,7 @@ function Dashboard({ theme, onToggleTheme }) {
                   {reviews.length} total
                 </span>
               </div>
-              <div className="live-stream-list" style={{ display: 'grid', gap: '0.75rem', maxHeight: '25rem', overflowY: 'auto', paddingRight: '0.25rem' }}>
+              <div className="live-stream-list">
                 {reviews.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '1.5rem', border: '1px dashed var(--surface-border)', borderRadius: '16px', color: 'var(--muted-text)', fontSize: '0.85rem' }}>
                     Awaiting incoming webhook signals
