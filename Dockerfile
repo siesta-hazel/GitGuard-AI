@@ -1,27 +1,25 @@
-# Use official Node.js LTS image
 FROM node:18-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files first (better layer caching)
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL deps (need devDeps for Vite build)
+RUN npm ci
 
-# Copy source code and views
 COPY . .
 
-# Create directory for SQLite database (will be overridden by volume)
+# Build the React frontend → outputs to public/dist/
+RUN npm run build
+
+# Remove devDependencies after build to slim the image
+RUN npm prune --production
+
 RUN mkdir -p /app/data
 
-# Expose port (default 3000)
 EXPOSE 3000
 
-# Healthcheck (optional)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})"
 
-# Start the server
 CMD ["node", "server.js"]
