@@ -1,5 +1,5 @@
 const { Octokit } = require('@octokit/rest');
-const { createAppAuth } = require('@octokit/auth-app');
+// const { createAppAuth } = require('@octokit/auth-app');
 const config = require('./config');
 const { analyzeDiffWithLLM } = require('./llm');
 const { saveReviewHistory, updateReviewHistory, getRepoSettings } = require('./data/store');
